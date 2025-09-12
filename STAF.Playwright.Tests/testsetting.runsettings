@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <TargetFrameworkVersion>.NETCoreApp,Version=v8.0</TargetFrameworkVersion>
+  </RunConfiguration>
+  <TestRunParameters>
+    <Parameter name="BaseUrl" value="https://playwright.dev" />
+    <Parameter name="Username" value="testuser" />
+    <Parameter name="Password" value="password123" />
+    <Parameter name="Environment" value="QA" />
+  </TestRunParameters>
+</RunSettings>

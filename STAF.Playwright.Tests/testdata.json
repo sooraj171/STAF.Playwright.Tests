@@ -1,0 +1,14 @@
+{
+    "QA": {
+        "Parent1": {
+            "Child1": "Child1Value",
+            "Child2": "Child2Value"
+        }
+    },
+    "UAT": {
+        "Parent1": {
+            "Child1": "Child1Value",
+            "Child2": "Child2Value"
+        }
+    }
+}
