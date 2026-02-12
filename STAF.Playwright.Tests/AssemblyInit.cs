@@ -13,13 +13,13 @@ namespace STAF.Playwright.Tests
         [AssemblyInitialize]
         public static void AssemblyInitialize(TestContext tc)
         {
-            STAF.Playwright.Framework.AssemblyInit.AssemblyInitialize(tc);
+            Framework.AssemblyInit.AssemblyInitialize(tc);
         }
 
         [AssemblyCleanup]
         public static void AssemblyCleanUp()
         {
-            STAF.Playwright.Framework.AssemblyInit.AssemblyCleanUp();
+            Framework.AssemblyInit.AssemblyCleanUp();
         }
     }
 }
