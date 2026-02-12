@@ -1,0 +1,21 @@
+{
+  "openapi": "3.0.2",
+  "info": { "title": "JSONPlaceholder", "version": "1.0.0" },
+  "servers": [{ "url": "https://jsonplaceholder.typicode.com" }],
+  "paths": {
+    "/posts/1": {
+      "get": {
+        "operationId": "getPost1",
+        "summary": "Get post by id 1",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/users/1": {
+      "get": {
+        "operationId": "getUser1",
+        "summary": "Get user by id 1",
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  }
+}
