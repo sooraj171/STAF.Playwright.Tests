@@ -1,5 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace STAF.Playwright.Tests
 {
     /// <summary>
