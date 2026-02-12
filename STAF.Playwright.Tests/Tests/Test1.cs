@@ -1,4 +1,4 @@
-﻿using STAF.Playwright.Framework;
+using STAF.Playwright.Framework;
 using STAF.Playwright.Pages;
 
 namespace STAF.Playwright
@@ -10,7 +10,8 @@ namespace STAF.Playwright
         [TestMethod]
         public async Task TestMethod1()
         {
-            await Page.GotoAsync("https://www.google.com");
+            // BaseTest navigates to BaseUrl from testsetting.runsettings in TestInitialize; optional override:
+            await Page.GotoAsync(ConfigManager.GetParameter("BaseUrl") ?? "https://www.google.com");
 
             GooglePage googlePage = new (Page, TestContext);
             await googlePage.VerifyGooglePageIsDisplayed();

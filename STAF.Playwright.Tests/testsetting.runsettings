@@ -4,7 +4,9 @@
     <TargetFrameworkVersion>.NETCoreApp,Version=v8.0</TargetFrameworkVersion>
   </RunConfiguration>
   <TestRunParameters>
-    <Parameter name="BaseUrl" value="https://playwright.dev" />
+    <Parameter name="BaseUrl" value="https://www.google.com" />
+    <Parameter name="Browser" value="Chrome" />
+    <Parameter name="Headless" value="false" />
     <Parameter name="Username" value="testuser" />
     <Parameter name="Password" value="password123" />
     <Parameter name="Environment" value="QA" />

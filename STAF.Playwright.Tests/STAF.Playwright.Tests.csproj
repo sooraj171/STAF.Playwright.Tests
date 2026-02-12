@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -10,8 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="MSTest" Version="3.10.4" />
-    <PackageReference Include="Microsoft.Playwright.MSTest" Version="1.55.0" />
-    <PackageReference Include="STAF.Playwright" Version="1.0.1" />
+    <PackageReference Include="STAF.Playwright" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.Playwright;
 using STAF.Playwright.Framework;
 
@@ -25,13 +25,12 @@ namespace STAF.Playwright.Pages
         {
             if (await WaitForElementVisibleAsync(SearchBox, 5000))
             {
-                
-                await HtmlResult.TC_ResultCreation(_google, TestName, "Google Page is displayed", "Google Page is displayed", "Pass", "");
+                await ReportResult.ReportResultPass(Page, TestContext, "Google Page", "Google page is displayed.");
             }
             else
             {
-                await HtmlResult.TC_ResultCreation(_google, TestName, "Google Page is displayed", "", "Fail", "");
-                throw new Exception("");
+                await ReportResult.ReportResultFail(Page, TestContext, "Google Page", "Google page was not displayed.");
+                Assert.Fail("Google page was not displayed.");
             }
         }
 
@@ -39,7 +38,7 @@ namespace STAF.Playwright.Pages
         {
             var searchBox = SearchBox;
             await EnterTextAsync(searchBox, search, TestName, "Search for " + search);
-            await searchBox.PressAsync("Enter");
+            await PressAsync(searchBox, "Enter", TestName, "Submit search");
         }
     }
 }
