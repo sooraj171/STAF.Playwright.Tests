@@ -5,8 +5,10 @@ This repository is a **ready-to-run sample** for [STAF.Playwright](https://www.n
 ## What you get
 
 - **STAF.Playwright 2.0.0** – .NET test automation framework using Microsoft Playwright and MSTest  
-- **BaseTest** – Browser/context/page setup and teardown, config-driven BaseUrl  
-- **BasePage** – Page object base with automatic step reporting (`ClickAsync`, `EnterTextAsync`, `PressAsync`)  
+- **UI tests** – `BaseTest` and `BasePage` (browser setup, page objects, step reporting)  
+- **API tests** – `TestBaseAPI` and `ApiClient` with a free GET API sample (JSONPlaceholder)  
+- **Contract tests** – OpenAPI contract validation via `OpenApiContractTestBase` and specs in `OpenAPI/`  
+- **Excel** – `ExcelDriver` sample (create, read, write, compare workbooks)  
 - **HTML reports** – In `TestResults` with screenshots on failure  
 - **Configuration** – `testsetting.runsettings` and optional `testdata.json` with environment support  
 
@@ -52,9 +54,13 @@ This repository is a **ready-to-run sample** for [STAF.Playwright](https://www.n
 | Path | Purpose |
 |------|--------|
 | `STAF.Playwright.Tests/` | Test project |
-| `STAF.Playwright.Tests/Tests/Test1.cs` | Sample test inheriting `BaseTest` |
+| `STAF.Playwright.Tests/Tests/Test1.cs` | UI sample test inheriting `BaseTest` |
+| `STAF.Playwright.Tests/Tests/ApiTests.cs` | API sample (TestBaseAPI, ApiClient) – JSONPlaceholder GET |
+| `STAF.Playwright.Tests/Tests/ContractTests.cs` | OpenAPI contract tests (OpenApiContractTestBase) |
+| `STAF.Playwright.Tests/Tests/Excel/ExcelDriverSampleTests.cs` | ExcelDriver create/read/compare samples |
 | `STAF.Playwright.Tests/Pages/GooglePage.cs` | Sample page object inheriting `BasePage` |
-| `STAF.Playwright.Tests/testsetting.runsettings` | BaseUrl, Browser, Headless, Environment, etc. |
+| `STAF.Playwright.Tests/OpenAPI/placeholder.json` | OpenAPI spec for contract tests (JSONPlaceholder) |
+| `STAF.Playwright.Tests/testsetting.runsettings` | BaseUrl, ApiBaseUrl, Browser, Headless, Environment, etc. |
 | `STAF.Playwright.Tests/testdata.json` | Optional test data by environment (QA, UAT, …) |
 
 ## Configuration
@@ -65,12 +71,14 @@ This repository is a **ready-to-run sample** for [STAF.Playwright](https://www.n
 
 For full options and CI/CD usage, see the [STAF.Playwright NuGet README](https://www.nuget.org/packages/STAF.Playwright) and the framework’s CONFIGURATION documentation.
 
-## Sample test and page
+## Sample tests (covers all STAF.Playwright features)
 
-- **Test** – `Test1` inherits `BaseTest`, uses `Page` and `ConfigManager`, and creates a `GooglePage` to verify the page and run a search.  
-- **Page** – `GooglePage` inherits `BasePage`, uses locators and `EnterTextAsync` / `PressAsync` (with automatic reporting), and uses `HtmlResult.TC_ResultCreation` for a custom verification step.
+- **UI** – `Test1` inherits `BaseTest`, uses `Page` and `ConfigManager`, and `GooglePage` (BasePage) for search.  
+- **API** – `ApiTests` inherits `TestBaseAPI`, uses `ApiClient.GetAsync` against [JSONPlaceholder](https://jsonplaceholder.typicode.com); set `ApiBaseUrl` in runsettings.  
+- **Contract** – `ContractTests` inherits `OpenApiContractTestBase`, validates endpoints against `OpenAPI/placeholder.json` (status code and optional schema).  
+- **Excel** – `ExcelDriverSampleTests` uses `ExcelDriver` to create workbooks, set/get cells, save, open, and compare files (temp directory, no external files).
 
-You can add more tests and page objects following the same pattern.
+You can add more tests and page objects following the same patterns.
 
 ## License
 
