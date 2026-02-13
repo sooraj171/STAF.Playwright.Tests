@@ -73,9 +73,24 @@ For full options and CI/CD usage, see the [STAF.Playwright NuGet README](https:/
 
 This project includes **MCP (Model Context Protocol) server** configuration so you can use the **Playwright C# MCP server** to generate STAF.Playwright tests and page objects from **Cursor**, **VS Code**, or **Visual Studio** (Community/Professional).
 
-The MCP executable is checked in under **`MCPAgent/`** so the same setup works for everyone after a clone—no environment variables or path edits required.
+The MCP server is checked in under **`MCPAgent/`** so the same setup works for everyone after a clone—no environment variables or path edits required.
 
-### What you need
+### What you need in `MCPAgent/`
+
+The MCP server is a .NET 8 application. To run it, **the entire build output** must be in `MCPAgent/`, not just the exe. Copy everything from your MCP project’s `bin/Debug/net8.0/` (or `bin/Release/net8.0/`) into `MCPAgent/`:
+
+| Required | Purpose |
+|----------|--------|
+| **PlaywrightCSharpMcp.exe** | Entry point. |
+| **PlaywrightCSharpMcp.dll** | Main assembly. |
+| **PlaywrightCSharpMcp.deps.json** | Dependency manifest (tells .NET which assemblies to load). |
+| **PlaywrightCSharpMcp.runtimeconfig.json** | Runtime config (e.g. .NET 8). |
+| **All `.dll` files** | Dependencies (e.g. `ModelContextProtocol.dll`, `Microsoft.Extensions.*.dll`, etc.). |
+| **runtimes/** folder | Platform-specific assemblies (e.g. `win/`, `browser/`). |
+
+Optional: `PlaywrightCSharpMcp.pdb` for debugging. If the server fails to start (e.g. in Visual Studio), ensure the full build output has been copied into `MCPAgent/`.
+
+### What you need (editor)
 
 - One of: **Cursor**, **VS Code** (with Copilot), or **Visual Studio 2022** (Community or Professional, version 17.14 or later with GitHub Copilot).
 - The repo opened as the workspace/solution (the folder that contains `MCPAgent` and the solution file).
@@ -118,15 +133,15 @@ Config: `.vscode/mcp.json` (uses `${workspaceFolder}/MCPAgent/PlaywrightCSharpMc
 
 Config: **`.mcp.json`** at the solution root (relative path `MCPAgent/PlaywrightCSharpMcp.exe`). You can add this file to **Solution Items** in Solution Explorer so it’s easy to find. See [Use MCP servers in Visual Studio](https://learn.microsoft.com/en-us/visualstudio/ide/mcp-servers) for more.
 
-### Updating the MCP executable
+### Updating the MCP server
 
-To update to a newer build of the Playwright C# MCP server, replace **`MCPAgent/PlaywrightCSharpMcp.exe`** with the new executable (e.g. from your MCP project’s `bin/Debug/net8.0/` or `bin/Release/net8.0/` output) and commit the change. The config files point at the exe under `MCPAgent/`, so no config edits are needed unless you use a different path.
+To update to a newer build of the Playwright C# MCP server, **copy the entire contents** of your MCP project’s `bin/Debug/net8.0/` (or `bin/Release/net8.0/`) into **`MCPAgent/`**—all `.exe`, `.dll`, `.json`, and the `runtimes/` folder. Do not copy only the exe; the app needs its dependencies to run. Then commit the changes. The config files point at `MCPAgent/PlaywrightCSharpMcp.exe`, so no config edits are needed.
 
 ### Project layout (MCP)
 
 | Path | Purpose |
 |------|--------|
-| `MCPAgent/PlaywrightCSharpMcp.exe` | Checked-in Playwright C# MCP server executable. |
+| `MCPAgent/` | Full build output of Playwright C# MCP server (exe, dlls, deps.json, runtimeconfig.json, runtimes/). |
 | `.cursor/mcp.json` | Cursor: project MCP config. |
 | `.vscode/mcp.json` | VS Code: workspace MCP config. |
 | `.mcp.json` | Visual Studio: solution MCP config (solution root). |
