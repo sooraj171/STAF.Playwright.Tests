@@ -5,6 +5,8 @@
   </RunConfiguration>
   <TestRunParameters>
     <Parameter name="BaseUrl" value="https://www.google.com" />
+    <Parameter name="ApiBaseUrl" value="https://jsonplaceholder.typicode.com" />
+    <Parameter name="ApiTimeout" value="30" />
     <Parameter name="Browser" value="Chrome" />
     <Parameter name="Headless" value="false" />
     <Parameter name="Username" value="testuser" />

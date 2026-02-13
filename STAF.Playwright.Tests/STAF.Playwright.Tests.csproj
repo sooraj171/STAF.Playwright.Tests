@@ -24,6 +24,9 @@
     <None Update="testsetting.runsettings">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="OpenAPI\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
