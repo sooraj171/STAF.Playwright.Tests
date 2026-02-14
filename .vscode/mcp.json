@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "playwrightCsharp": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/MCPAgent/PlaywrightCSharpMcp.exe",
+      "args": []
+    }
+  }
+}
