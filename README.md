@@ -106,7 +106,9 @@ The MCP server is checked in under **`MCPAgent/`** so the same setup works for e
 
 ### What you need in `MCPAgent/`
 
-The MCP server is a .NET 8 application. To run it, **the entire build output** must be in `MCPAgent/`, not just the exe. Copy everything from your MCP project’s `bin/Debug/net8.0/` (or `bin/Release/net8.0/`) into `MCPAgent/`:
+The MCP server is a .NET application. To run it, **the entire build output** must be in `MCPAgent/`, not just the exe. **Preferred:** From the **mcp-sharp-staf-playwright** repo (sibling to this repo), run: ``.\Publish-MCPAgent.ps1`` — it publishes win-x64 self-contained output to ``../STAF.Playwright.Tests/MCPAgent/``. Use ``-MCPAgentPath`` if your layout differs.
+
+**Alternative:** Copy everything from your MCP project’s publish output (e.g. ``bin/Release/net10.0/win-x64/publish/`` or ``bin/Debug/net8.0/``) into ``MCPAgent/``:
 
 | Required | Purpose |
 |----------|--------|
@@ -164,7 +166,7 @@ Config: **`.mcp.json`** at the solution root (relative path `MCPAgent/Playwright
 
 ### Updating the MCP server
 
-To update to a newer build of the Playwright C# MCP server, **copy the entire contents** of your MCP project’s `bin/Debug/net8.0/` (or `bin/Release/net8.0/`) into **`MCPAgent/`**—all `.exe`, `.dll`, `.json`, and the `runtimes/` folder. Do not copy only the exe; the app needs its dependencies to run. Then commit the changes. The config files point at `MCPAgent/PlaywrightCSharpMcp.exe`, so no config edits are needed.
+From the **mcp-sharp-staf-playwright** repo, run ``.\Publish-MCPAgent.ps1``. This publishes the MCP server (win-x64, self-contained) into **`STAF.Playwright.Tests/MCPAgent/`**. Then commit the changes in this repo if desired. The config files point at `MCPAgent/PlaywrightCSharpMcp.exe`, so no config edits are needed.
 
 ### Project layout (MCP)
 
