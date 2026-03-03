@@ -11,7 +11,7 @@ This project implements and demonstrates the **[STAF.Playwright](https://www.nug
 - **NuGet:** [https://www.nuget.org/packages/STAF.Playwright](https://www.nuget.org/packages/STAF.Playwright)
 - **Install:** `dotnet add package STAF.Playwright`
 
-STAF (Simple Test Automation Framework) provides base classes, page object support, HTML reporting with screenshots, and configuration for multi-environment test runs. It targets **.NET 8** and uses **MSTest** and **Microsoft Playwright**.
+STAF (Simple Test Automation Framework) provides base classes, page object support, HTML reporting with screenshots, and configuration for multi-environment test runs. It targets **.NET 10** and uses **MSTest** and **Microsoft Playwright**.
 
 ---
 
@@ -28,14 +28,9 @@ STAF (Simple Test Automation Framework) provides base classes, page object suppo
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Playwright browsers](https://playwright.dev/dotnet/docs/browsers) installed once (from repo root after `dotnet build`):
-
-  ```powershell
-  pwsh STAF.Playwright.Tests/bin/Debug/net8.0/playwright.ps1 install
-  ```
-
-  Or from the test project directory: `dotnet build` then `pwsh bin/Debug/net8.0/playwright.ps1 install`.
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- **Chrome or Edge** (or another Chromium-based browser) installed on your machine. This project uses the **browser already on your system** (via Playwright’s channel support); you do **not** need to run `playwright.ps1 install`.  
+  If you later switch configuration to use Playwright’s bundled Chromium, Firefox, or WebKit, see [Playwright browsers](https://playwright.dev/dotnet/docs/browsers) for installation.
 
 ---
 
@@ -63,7 +58,7 @@ STAF (Simple Test Automation Framework) provides base classes, page object suppo
    ```
 
 3. **View results**  
-   HTML reports (including `ResultTemplateFinal.html`) and screenshots are written under `TestResults` in the test project output (e.g. `STAF.Playwright.Tests/bin/Debug/net8.0/TestResults`).
+   HTML reports (including `ResultTemplateFinal.html`) and screenshots are written under `TestResults` in the test project output (e.g. `STAF.Playwright.Tests/bin/Debug/net10.0/TestResults`).
 
 ---
 
@@ -81,8 +76,10 @@ STAF (Simple Test Automation Framework) provides base classes, page object suppo
 | `STAF.Playwright.Tests/OpenAPI/placeholder.json` | OpenAPI spec for contract tests (JSONPlaceholder) |
 | `STAF.Playwright.Tests/testsetting.runsettings` | BaseUrl, ApiBaseUrl, Browser, Headless, Environment, etc. |
 | `STAF.Playwright.Tests/testdata.json` | Optional test data by environment (QA, UAT, …) |
-| `MCPAgent/PlaywrightCSharpMcp.exe` | Playwright C# MCP server for code generation (see MCP section below) |
+| `MCPAgent/` | Playwright C# MCP server (included for use with Cursor, VS Code, or Visual Studio — see [Using the MCP agent](#using-the-mcp-agent)) |
 | `.cursor/mcp.json` | Cursor MCP config |
+| `.cursor/rules/staf-playwright-framework.mdc` | Cursor rules for STAF Playwright (base classes, page objects, tool usage) |
+| `.github/copilot-instructions.md` | GitHub Copilot / agent instructions for this repo |
 | `.vscode/mcp.json` | VS Code MCP config |
 | `.mcp.json` | Visual Studio MCP config (solution root) |
 
@@ -98,84 +95,34 @@ For full options and CI/CD usage, see the [STAF.Playwright NuGet page](https://w
 
 ---
 
-## MCP server (Playwright C# code generation)
+## Using the MCP agent
 
-This project includes **MCP (Model Context Protocol) server** configuration so you can use the **Playwright C# MCP server** to generate STAF.Playwright tests and page objects from **Cursor**, **VS Code**, or **Visual Studio** (Community/Professional).
+This repo is configured for the **Playwright C# MCP server**, so you can use AI-assisted development in **Cursor**, **VS Code**, or **Visual Studio** to generate and refine STAF.Playwright tests and page objects. The MCP server is included under **`MCPAgent/`**—clone the repo and open it in your editor; no extra setup is required.
 
-The MCP server is checked in under **`MCPAgent/`** so the same setup works for everyone after a clone—no environment variables or path edits required.
+### What you need
 
-### What you need in `MCPAgent/`
+- **.NET 10 SDK** and one of: **Cursor**, **VS Code** (with [GitHub Copilot](https://code.visualstudio.com/docs/copilot/setup)), or **Visual Studio 2022** (17.14+ with [GitHub Copilot](https://learn.microsoft.com/en-us/visualstudio/ide/visual-studio-github-copilot-chat)).
+- Open this repository as the workspace (Cursor/VS Code: **File → Open Folder** → repo root; Visual Studio: **File → Open → Project/Solution** → `STAF.Playwright.Tests.sln`).
 
-The MCP server is a .NET application. To run it, **the entire build output** must be in `MCPAgent/`, not just the exe. **Preferred:** From the **mcp-sharp-staf-playwright** repo (sibling to this repo), run: ``.\Publish-MCPAgent.ps1`` — it publishes win-x64 self-contained output to ``../STAF.Playwright.Tests/MCPAgent/``. Use ``-MCPAgentPath`` if your layout differs.
+### How to use the MCP agent
 
-**Alternative:** Copy everything from your MCP project’s publish output (e.g. ``bin/Release/net10.0/win-x64/publish/`` or ``bin/Debug/net8.0/``) into ``MCPAgent/``:
+- **Cursor**  
+  Open the repo as the workspace, then go to **Cursor Settings → Features → MCP** and ensure the project MCP is enabled. The Playwright C# tools appear in the AI/composer; use them to generate or refine tests and page objects.
 
-| Required | Purpose |
-|----------|--------|
-| **PlaywrightCSharpMcp.exe** | Entry point. |
-| **PlaywrightCSharpMcp.dll** | Main assembly. |
-| **PlaywrightCSharpMcp.deps.json** | Dependency manifest (tells .NET which assemblies to load). |
-| **PlaywrightCSharpMcp.runtimeconfig.json** | Runtime config (e.g. .NET 8). |
-| **All `.dll` files** | Dependencies (e.g. `ModelContextProtocol.dll`, `Microsoft.Extensions.*.dll`, etc.). |
-| **runtimes/** folder | Platform-specific assemblies (e.g. `win/`, `browser/`). |
+- **VS Code**  
+  Open the repo as the workspace and ensure [GitHub Copilot](https://code.visualstudio.com/docs/copilot/setup) is set up. First time you use the MCP server, trust it when prompted. In Chat, enable the **playwrightCsharp** tools and use Copilot (e.g. Agent mode) to generate or refine STAF.Playwright tests and page objects.
 
-Optional: `PlaywrightCSharpMcp.pdb` for debugging. If the server fails to start (e.g. in Visual Studio), ensure the full build output has been copied into `MCPAgent/`.
+- **Visual Studio**  
+  Open `STAF.Playwright.Tests.sln`. Visual Studio picks up `.mcp.json` at the solution root. In the **GitHub Copilot** chat, switch to **Agent** mode, enable the **playwrightCsharp** tools, then ask Copilot to generate or refine tests or page objects (approve tool use when prompted). If the server does not start, set the `"command"` in `.mcp.json` to the full path to `MCPAgent/PlaywrightCSharpMcp.exe`. See [Use MCP servers in Visual Studio](https://learn.microsoft.com/en-us/visualstudio/ide/mcp-servers).
 
-### What you need (editor)
+### AI instructions and rules
 
-- One of: **Cursor**, **VS Code** (with Copilot), or **Visual Studio 2022** (Community or Professional, version 17.14 or later with GitHub Copilot).
-- The repo opened as the workspace/solution (the folder that contains `MCPAgent` and the solution file).
+So that generated code follows STAF.Playwright patterns (base classes, page objects, reporting), the repo includes:
 
-### Setup by editor
+- **Cursor:** [.cursor/rules/staf-playwright-framework.mdc](.cursor/rules/staf-playwright-framework.mdc) — applied automatically.
+- **VS Code (GitHub Copilot):** [.github/copilot-instructions.md](.github/copilot-instructions.md) — repo-level guidance.
 
-#### Cursor
-
-1. **Clone the repo** and open this repository as the workspace (**File → Open Folder** → select the repo root).
-2. **Enable the project MCP**  
-   Go to **Cursor Settings → Features → MCP** (or **Tools & MCP**) and ensure the **project** MCP configuration is enabled so the `playwright-csharp` server is used.
-3. **Use the MCP tools**  
-   The Playwright C# MCP server will expose tools in the AI/composer. Use them to generate or refine tests and page objects.
-
-Config: `.cursor/mcp.json` (uses `${workspaceFolder}/MCPAgent/PlaywrightCSharpMcp.exe`).
-
-#### VS Code
-
-1. **Clone the repo** and open this repository as the workspace (**File → Open Folder** → select the repo root).
-2. **Install/use Copilot**  
-   MCP in VS Code works with [GitHub Copilot](https://code.visualstudio.com/docs/copilot/setup). Ensure Copilot is set up for your workspace.
-3. **Trust the MCP server (first time)**  
-   When you use the MCP server for the first time, VS Code may prompt you to trust it. Confirm so the Playwright C# tools can run.
-4. **Use the MCP tools**  
-   In the Chat view, open the tool picker and enable the **playwrightCsharp** server’s tools. Use Copilot chat (e.g. Agent mode) to generate or refine STAF.Playwright tests and page objects.
-
-Config: `.vscode/mcp.json` (uses `${workspaceFolder}/MCPAgent/PlaywrightCSharpMcp.exe`). You can also run **MCP: Open Workspace Folder Configuration** from the Command Palette to open it.
-
-#### Visual Studio (Community or Professional)
-
-1. **Prerequisites**  
-   Visual Studio 2022 version **17.14** or later and [GitHub Copilot](https://learn.microsoft.com/en-us/visualstudio/ide/visual-studio-github-copilot-chat) for Visual Studio.
-2. **Clone the repo** and open the solution (**File → Open → Project/Solution** → select `STAF.Playwright.Tests.sln`).
-3. **Use the project MCP config**  
-   Visual Studio discovers MCP config from the solution directory. This repo includes **`.mcp.json`** at the solution root with the `playwrightCsharp` server pointing at `MCPAgent/PlaywrightCSharpMcp.exe`. If the server does not start, edit `.mcp.json` and set `"command"` to the **full path** to `PlaywrightCSharpMcp.exe` (e.g. `C:/path/to/STAF.Playwright.Tests/MCPAgent/PlaywrightCSharpMcp.exe`).
-4. **Switch to Agent mode and enable tools**  
-   In the **GitHub Copilot** chat window, open the mode dropdown and select **Agent**. In the tool picker, enable the **playwrightCsharp** tools.
-5. **Use the MCP tools**  
-   Ask Copilot to generate or refine STAF.Playwright tests or page objects; when it uses a tool, approve the request if prompted.
-
-Config: **`.mcp.json`** at the solution root (relative path `MCPAgent/PlaywrightCSharpMcp.exe`). You can add this file to **Solution Items** in Solution Explorer so it’s easy to find. See [Use MCP servers in Visual Studio](https://learn.microsoft.com/en-us/visualstudio/ide/mcp-servers) for more.
-
-### Updating the MCP server
-
-From the **mcp-sharp-staf-playwright** repo, run ``.\Publish-MCPAgent.ps1``. This publishes the MCP server (win-x64, self-contained) into **`STAF.Playwright.Tests/MCPAgent/`**. Then commit the changes in this repo if desired. The config files point at `MCPAgent/PlaywrightCSharpMcp.exe`, so no config edits are needed.
-
-### Project layout (MCP)
-
-| Path | Purpose |
-|------|--------|
-| `MCPAgent/` | Full build output of Playwright C# MCP server (exe, dlls, deps.json, runtimeconfig.json, runtimes/). |
-| `.cursor/mcp.json` | Cursor: project MCP config. |
-| `.vscode/mcp.json` | VS Code: workspace MCP config. |
-| `.mcp.json` | Visual Studio: solution MCP config (solution root). |
+No extra configuration is needed; the AI and MCP agent use these when working in this project.
 
 ---
 

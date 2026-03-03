@@ -1,0 +1,61 @@
+---
+description: STAF Playwright framework rules – base tests, page objects, waits, reporting, contract testing, and coding standards
+alwaysApply: true
+---
+
+# STAF Playwright Framework Rules
+
+## 1. Framework
+
+- All **UI tests** must inherit from **BaseTest** from `STAF.Playwright.Framework`.
+- All **API tests** must inherit from **TestBaseAPI** from `STAF.Playwright.Framework`.
+- All **OpenAPI contract tests** must inherit from **OpenApiContractTestBase** from `STAF.Playwright.Framework.ContractTesting` and override `OpenApiSpecFolder` to point at the `OpenAPI` folder copied to the test output.
+- Do **not** create your own Playwright browser/page lifecycle in tests; use the `BaseTest`-provided `Page` and configuration from `ConfigManager`.
+- Assembly-level initialization/cleanup must delegate to `Framework.AssemblyInit` as shown in `AssemblyInit` so that **ResultTemplate.html** and **ResultTemplateFinal.html** are produced correctly.
+- Use **runsettings parameters** (e.g. `BaseUrl`, `ApiBaseUrl`, `Browser`, `Headless`, `Environment`) via `ConfigManager.GetParameter(...)` instead of hardcoding values.
+
+## 2. Tool Usage (MCP / Code Generation)
+
+- When **navigating** in UI tests, use `Page.GotoAsync(...)` with URLs read from `ConfigManager`, not raw `new Playwright()` or custom browser setup.
+- When **interacting with the page** from page objects, use `BasePage` helpers such as:
+  - `WaitForElementVisibleAsync(locator, timeoutMs)`
+  - `EnterTextAsync(locator, text, testName, stepDescription)`
+  - `PressAsync(locator, key, testName, stepDescription)`
+- When **reporting UI steps**, use `ReportResult.ReportResultPass(...)`, `ReportResult.ReportResultFail(...)`, etc., passing `Page` and `TestContext`; avoid ad-hoc logging.
+- For **API tests**, use the `ApiClient` and `ReportResultAPI` helpers from `TestBaseAPI` instead of constructing your own `HttpClient` or manual logging.
+- For **contract tests**, call the `RunAllContractTestsAsync(...)` and `AssertAllContractTestsPassed(...)` helpers from `OpenApiContractTestBase` rather than reimplementing contract validation.
+- For **Excel scenarios**, use `ExcelDriver` from `STAF.Playwright.Framework.Excel` (e.g., `CreateWorkbook`, `Save`, `Open`, `CompareFiles`) instead of manipulating Excel files directly.
+- Generated code must **always use** these framework abstractions; do **not** bypass them with raw Playwright or .NET APIs when an equivalent helper exists.
+
+## 3. Test Creation Workflow
+
+1. **Identify the scenario**
+   - Determine whether this is a UI, API, contract, or Excel-related test.
+2. **Choose the correct base class**
+   - UI → `BaseTest`
+   - API → `TestBaseAPI`
+   - Contract → `OpenApiContractTestBase`
+3. **Create or reuse Page Objects (for UI)**
+   - Look under `Pages/` (e.g. `GooglePage`) before creating a new page.
+   - New pages should inherit from `BasePage` and:
+     - Accept `IPage` and `TestContext` in the constructor.
+     - Expose **locators** as `ILocator` properties using `Page.Locator(...)`.
+     - Use `WaitForElementVisibleAsync`, `EnterTextAsync`, `PressAsync`, and `ReportResult` helpers inside page methods.
+4. **Centralize locators and reusable actions**
+   - Define locators on the page class and expose **high-level methods** (e.g. `VerifyGooglePageIsDisplayed`, `SearchFor(...)`).
+   - Tests should call page methods, not raw locators or Playwright APIs.
+5. **Write tests using framework helpers**
+   - Use `ConfigManager.GetParameter(...)` for configuration.
+   - Use the appropriate reporting helpers (`ReportResult`, `ReportResultAPI`) for all important steps.
+6. **Assertions and reporting**
+   - Use MSTest assertions (`Assert.*`) in combination with reporting helpers.
+   - For contract tests, rely on `AssertAllContractTestsPassed(results)` to validate outcomes.
+
+## 4. Coding Standards
+
+- Prefer **stable selectors** when defining `ILocator`s (IDs, data attributes, semantic attributes) instead of brittle CSS/XPath.
+- Keep **page classes small and focused**, grouping related elements and actions per page/screen.
+- Test methods should follow **AAA (Arrange–Act–Assert)** and clearly describe the scenario in their names.
+- Avoid `Thread.Sleep` or arbitrary `Task.Delay`; always rely on framework waits such as `WaitForElementVisibleAsync`.
+- Do not duplicate existing page methods; **reuse and extend** existing abstractions where possible.
+- Keep tests and pages in the existing folder structure (`Tests/`, `Pages/`, `Tests/Excel/`, `OpenAPI/`) to match the sample project style.
