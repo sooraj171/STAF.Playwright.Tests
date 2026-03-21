@@ -2,6 +2,8 @@
 
 **Sample implementation** of the [STAF.Playwright](https://www.nuget.org/packages/STAF.Playwright) framework — a .NET test automation framework for web and API testing using **Microsoft Playwright** and **MSTest**. This repository provides a ready-to-run project so you can clone, restore, and execute tests with minimal setup.
 
+**Using AI to write tests?** See [AI-assisted automation (copy-paste prompts)](#ai-assisted-automation-copy-paste-prompts) for `@`/`attach` bundles and ready-made prompts.
+
 ---
 
 ## STAF.Playwright framework
@@ -62,10 +64,136 @@ STAF (Simple Test Automation Framework) provides base classes, page object suppo
 
 ---
 
+## AI-assisted automation (copy-paste prompts)
+
+Use this when you want **Cursor**, **VS Code (Copilot)**, or **Visual Studio (Copilot)** to generate **STAF.Playwright** tests and page objects without hunting for file paths.
+
+### 1. Open the right folder
+
+Open the **repository root** (the folder that contains `STAF.Playwright.Tests.sln`, `AI/`, and `.cursor/`) as your workspace. Paths below are relative to that root.
+
+### 2. Give the model the handbook (recommended)
+
+| Editor | What to do |
+|--------|------------|
+| **Cursor** | In **Chat** or **Composer**, type **`@`** and add **`AI/instructions/system-prompt.md`**, **`AI/instructions/generation-rules.md`**, plus the skill(s) you need (e.g. **`@AI/skills/ui-testing.md`**). Optional: enable **project Skills** under `.cursor/skills/` — they only *point* at the same `AI/` files (no duplicate rules). |
+| **VS Code** | In **Copilot Chat**, use **Add context** / attach files. Start from **[`.vscode/staf-ai/INDEX.md`](.vscode/staf-ai/INDEX.md)** to see the full list, then attach the same `AI/instructions/*.md` and `AI/skills/*.md` files. Repo-wide behavior is also in **[`.github/copilot-instructions.md`](.github/copilot-instructions.md)**. |
+| **Visual Studio** | Use Copilot **Agent** mode with the Playwright MCP tools if enabled; attach or paste paths to the `AI/` files when the chat supports context. |
+
+**Suggested bundles**
+
+- **UI automation:** `AI/instructions/system-prompt.md`, `AI/instructions/generation-rules.md`, `AI/skills/ui-testing.md`, `AI/skills/reporting.md`, `AI/skills/test-data.md`, `AI/skills/framework-rules.md`
+- **API automation:** same instructions + `AI/skills/api-testing.md`, `AI/skills/test-data.md`, `AI/skills/framework-rules.md`
+- **After a failure:** `AI/instructions/debugging-rules.md` + the skill for the layer that failed (e.g. `AI/skills/ui-testing.md`)
+
+### 3. Copy a sample prompt (fill in the brackets)
+
+**New UI flow (Page Object + test)**
+
+```text
+You are working in the STAF.Playwright.Tests repository. Follow the attached AI/instructions and AI/skills files exactly.
+
+Feature / user story:
+[Describe the screen, role, and what the user should achieve—e.g. login, submit form, verify message.]
+
+Requirements:
+- UI test class: inherit BaseTest from STAF.Playwright.Framework; use ConfigManager for URLs and parameters (testsetting.runsettings), no hardcoded environments.
+- Page Object: under Pages/, inherit BasePage; all ILocator and interactions live there; use WaitForElementVisibleAsync, EnterTextAsync, PressAsync, and ReportResult for steps.
+- The test method must NOT use raw Playwright (no Page.Locator / Click / Fill in the test class)—only call page object methods.
+- Add MSTest assertions and reporting for important steps.
+- If you add new URLs, keys, or test data, update testsetting.runsettings and/or testdata.json and show the code that reads them via ConfigManager.
+
+Deliver: (1) Page class(es) as needed (2) Test class under Tests/ (3) config/test data updates (4) short comments only where logic is non-obvious.
+```
+
+**New API tests**
+
+```text
+Repository: STAF.Playwright.Tests. Follow the attached AI handbook files.
+
+API scenario:
+[Describe endpoints, methods, auth, expected status codes, and what to assert in the body.]
+
+Requirements:
+- Test class inherits TestBaseAPI; use ApiClient and ReportResultAPI from the framework—no ad-hoc HttpClient.
+- Base URL from ConfigManager GetParameter("ApiBaseUrl") / runsettings.
+- Include happy path and at least one negative or edge case if applicable.
+- Use async/await consistently with existing samples.
+
+Deliver: test class(es) under Tests/, and any runsettings/testdata updates.
+```
+
+**OpenAPI / contract coverage**
+
+```text
+STAF.Playwright.Tests repo. Follow attached AI/skills/framework-rules.md and framework conventions.
+
+Contract goal:
+[Describe which API surface or spec to validate.]
+
+Requirements:
+- Use OpenApiContractTestBase; OpenApiSpecFolder points at specs under OpenAPI/ copied to output (match existing ContractTests pattern).
+- Use framework helpers RunAllContractTestsAsync / AssertAllContractTestsPassed—do not reimplement contract validation from scratch.
+
+Deliver: test class and any new/updated OpenAPI JSON under OpenAPI/ as needed.
+```
+
+**Debug a failed run**
+
+```text
+STAF.Playwright.Tests. Follow AI/instructions/debugging-rules.md.
+
+Failure summary:
+[Paste assertion message, stack trace, or describe flaky behavior.]
+
+Task: identify likely root cause (config, selector, timing, data, parallel conflict), suggest a concrete fix (files/methods to change), and say what to re-run (single test command with testsetting.runsettings).
+```
+
+**Excel / workbook scenario**
+
+```text
+STAF.Playwright.Tests. Follow AI/skills/framework-rules.md and existing Excel samples under Tests/Excel/.
+
+Scenario:
+[Describe create/read/compare or data setup with Excel files.]
+
+Requirements:
+- Use ExcelDriver from STAF.Playwright.Framework.Excel (CreateWorkbook, Save, Open, CompareFiles, etc.)—do not manipulate OpenXML or COM Excel directly unless the framework cannot cover the case.
+- Keep tests under Tests/Excel/ or follow the existing namespace/folder pattern in this repo.
+- Use temp paths or isolated files so parallel runs do not clash.
+
+Deliver: test class changes and any notes on required input files (prefer generating files in-test).
+```
+
+### 4. Run what was generated
+
+From the **repository root**:
+
+```bash
+dotnet test --settings STAF.Playwright.Tests/testsetting.runsettings
+```
+
+From **`STAF.Playwright.Tests/`** (test project folder):
+
+```bash
+dotnet test --settings testsetting.runsettings
+```
+
+Run a **single** test (example — replace with your test class and method):
+
+```bash
+dotnet test --settings STAF.Playwright.Tests/testsetting.runsettings --filter "FullyQualifiedName~YourTestClass.YourTestMethod"
+```
+
+Then open **`TestResults`** under the test project output folder for HTML and screenshots (see [Quick start](#quick-start) step 3).
+
+---
+
 ## Project layout
 
 | Path | Purpose |
 |------|--------|
+| `STAF.Playwright.Tests.sln` | Visual Studio / `dotnet` solution (open this or the repo folder) |
 | `STAF.Playwright.Tests/` | Test project |
 | `STAF.Playwright.Tests/AssemblyInit.cs` | Assembly init/cleanup; delegates to framework for final HTML report |
 | `STAF.Playwright.Tests/Tests/Test1.cs` | UI sample test inheriting `BaseTest` |
@@ -76,10 +204,14 @@ STAF (Simple Test Automation Framework) provides base classes, page object suppo
 | `STAF.Playwright.Tests/OpenAPI/placeholder.json` | OpenAPI spec for contract tests (JSONPlaceholder) |
 | `STAF.Playwright.Tests/testsetting.runsettings` | BaseUrl, ApiBaseUrl, Browser, Headless, Environment, etc. |
 | `STAF.Playwright.Tests/testdata.json` | Optional test data by environment (QA, UAT, …) |
+| `AI/instructions/` | Canonical AI playbook: persona, generation rules, debugging rules |
+| `AI/skills/` | Canonical per-topic skills (UI, API, DB, test data, reporting, framework) |
+| `.cursor/skills/` | Cursor **project skills** (stubs only — each points at a file under `AI/`) |
+| `.vscode/staf-ai/INDEX.md` | Table of contents for the same `AI/` files (VS Code / Copilot attach list) |
 | `MCPAgent/` | Playwright C# MCP server (included for use with Cursor, VS Code, or Visual Studio — see [Using the MCP agent](#using-the-mcp-agent)) |
 | `.cursor/mcp.json` | Cursor MCP config |
 | `.cursor/rules/staf-playwright-framework.mdc` | Cursor rules for STAF Playwright (base classes, page objects, tool usage) |
-| `.github/copilot-instructions.md` | GitHub Copilot / agent instructions for this repo |
+| `.github/copilot-instructions.md` | GitHub Copilot / agent instructions; references `AI/` as single source of truth |
 | `.vscode/mcp.json` | VS Code MCP config |
 | `.mcp.json` | Visual Studio MCP config (solution root) |
 
@@ -87,7 +219,7 @@ STAF (Simple Test Automation Framework) provides base classes, page object suppo
 
 ## Configuration
 
-- **Run settings** – Edit `testsetting.runsettings`: `BaseUrl`, `ApiBaseUrl`, `Browser` (Chrome, Firefox, Edge, Webkit), `Headless`, `Environment`, and other parameters.
+- **Run settings** – Edit `STAF.Playwright.Tests/testsetting.runsettings`: `BaseUrl`, `ApiBaseUrl`, `Browser` (Chrome, Firefox, Edge, Webkit), `Headless`, `Environment`, and other parameters.
 - **Environment variables** – Override any parameter with the `STAF_` prefix (e.g. `STAF_BaseUrl`, `STAF_Headless=true`).
 - **Test data** – Use `testdata.json` and optional `testdata.{Environment}.json`; access via `ConfigManager.GetTestData(environment, section, key)`.
 
@@ -119,10 +251,15 @@ This repo is configured for the **Playwright C# MCP server**, so you can use AI-
 
 So that generated code follows STAF.Playwright patterns (base classes, page objects, reporting), the repo includes:
 
-- **Cursor:** [.cursor/rules/staf-playwright-framework.mdc](.cursor/rules/staf-playwright-framework.mdc) — applied automatically.
-- **VS Code (GitHub Copilot):** [.github/copilot-instructions.md](.github/copilot-instructions.md) — repo-level guidance.
+- **Cursor:** [.cursor/rules/staf-playwright-framework.mdc](.cursor/rules/staf-playwright-framework.mdc) — applied automatically for this workspace.
+- **VS Code / GitHub Copilot:** [.github/copilot-instructions.md](.github/copilot-instructions.md) — loaded for the repository; attach **`AI/`** files in chat for the strongest alignment (see [AI-assisted automation](#ai-assisted-automation-copy-paste-prompts)).
+- **Canonical handbook:** [`AI/instructions/`](AI/instructions/) and [`AI/skills/`](AI/skills/) — **only** place the full rule text is maintained.
+- **Cursor project skills:** [`.cursor/skills/`](.cursor/skills/) — stubs that point at `AI/` (no duplicated rules).
+- **VS Code index:** [`.vscode/staf-ai/INDEX.md`](.vscode/staf-ai/INDEX.md) — quick list of `AI/` paths to attach.
 
-No extra configuration is needed; the AI and MCP agent use these when working in this project.
+**Copy-paste prompts and @-attach bundles:** [AI-assisted automation](#ai-assisted-automation-copy-paste-prompts) (above).
+
+MCP tools (browser inspection, etc.) complement the handbook; they do not replace the `BaseTest` / `BasePage` / `ApiClient` patterns in this project.
 
 ---
 
