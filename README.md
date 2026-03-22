@@ -25,6 +25,7 @@ STAF (Simple Test Automation Framework) provides base classes, page object suppo
 - **Excel** – `ExcelDriver` sample (create, read, write, compare workbooks)
 - **HTML reports** – Per-test and final aggregated report (`ResultTemplateFinal.html`) in `TestResults`, with screenshots on failure
 - **Configuration** – `testsetting.runsettings` and optional `testdata.json` with environment support
+- **AI QA Orchestrator (work items)** – STLC-aligned playbook and phase markdown reports under `QA/work-items/` (Azure DevOps / Jira via MCP when configured, or pasted requirements). See [Work-item / PBI QA (orchestrator)](#work-item--pbi-qa-orchestrator).
 
 ---
 
@@ -76,7 +77,7 @@ Open the **repository root** (the folder that contains `STAF.Playwright.Tests.sl
 
 | Editor | What to do |
 |--------|------------|
-| **Cursor** | In **Chat** or **Composer**, type **`@`** and add **`AI/instructions/system-prompt.md`**, **`AI/instructions/generation-rules.md`**, plus the skill(s) you need (e.g. **`@AI/skills/ui-testing.md`**). Optional: enable **project Skills** under `.cursor/skills/` — they only *point* at the same `AI/` files (no duplicate rules). |
+| **Cursor** | In **Chat** or **Composer**, type **`@`** and add **`AI/instructions/system-prompt.md`**, **`AI/instructions/generation-rules.md`**, plus the skill(s) you need (e.g. **`@AI/skills/ui-testing.md`**). For PBIs/User Stories end-to-end, add **`@.cursor/skills/staf-qa-orchestrator/SKILL.md`** or **`AI/instructions/qa-orchestrator-lifecycle.md`**. Optional: enable **project Skills** under `.cursor/skills/` — they only *point* at the same `AI/` files (no duplicate rules). |
 | **VS Code** | In **Copilot Chat**, use **Add context** / attach files. Start from **[`.vscode/staf-ai/INDEX.md`](.vscode/staf-ai/INDEX.md)** to see the full list, then attach the same `AI/instructions/*.md` and `AI/skills/*.md` files. Repo-wide behavior is also in **[`.github/copilot-instructions.md`](.github/copilot-instructions.md)**. |
 | **Visual Studio** | Use Copilot **Agent** mode with the Playwright MCP tools if enabled; attach or paste paths to the `AI/` files when the chat supports context. |
 
@@ -85,6 +86,7 @@ Open the **repository root** (the folder that contains `STAF.Playwright.Tests.sl
 - **UI automation:** `AI/instructions/system-prompt.md`, `AI/instructions/generation-rules.md`, `AI/skills/ui-testing.md`, `AI/skills/reporting.md`, `AI/skills/test-data.md`, `AI/skills/framework-rules.md`
 - **API automation:** same instructions + `AI/skills/api-testing.md`, `AI/skills/test-data.md`, `AI/skills/framework-rules.md`
 - **After a failure:** `AI/instructions/debugging-rules.md` + the skill for the layer that failed (e.g. `AI/skills/ui-testing.md`)
+- **Work item / PBI (STLC reports):** `AI/instructions/qa-orchestrator-lifecycle.md`, `AI/instructions/work-item-report-templates.md`, `AI/skills/qa-orchestrator.md` — Cursor: `@.cursor/skills/staf-qa-orchestrator/SKILL.md`. Optionally configure an **Azure DevOps** or **Jira** MCP server in Cursor/VS Code so the agent can fetch the item; if not available, paste the description and acceptance criteria.
 
 ### 3. Copy a sample prompt (fill in the brackets)
 
@@ -165,6 +167,19 @@ Requirements:
 Deliver: test class changes and any notes on required input files (prefer generating files in-test).
 ```
 
+**Work item / PBI — full QA cycle (markdown reports)**
+
+```text
+STAF.Playwright.Tests repo. Follow the QA Orchestrator skill / AI/instructions/qa-orchestrator-lifecycle.md and work-item-report-templates.md.
+
+Work item:
+[ADO/Jira ID or URL, or paste title + description + acceptance criteria here.]
+
+Task: Run the lifecycle — fetch (or use paste), analysis, test design, test cases with AC traceability, code review if application code is in this workspace, test execution strategy, then summary. Write one markdown file per phase under QA/work-items/{Provider}-{WorkItemId}/ (01-pbi-fetch.md through 07-summary-report.md) using the templates.
+
+When implementing automation afterward, follow generation-rules.md and the UI/API skills as usual.
+```
+
 ### 4. Run what was generated
 
 From the **repository root**:
@@ -189,6 +204,25 @@ Then open **`TestResults`** under the test project output folder for HTML and sc
 
 ---
 
+## Work-item / PBI QA (orchestrator)
+
+For **end-to-end QA** from a **PBI, User Story, or Bug** (not only “write one test”), the repo includes an **STLC-aligned** playbook:
+
+| Doc | Purpose |
+|-----|--------|
+| [`AI/instructions/qa-orchestrator-lifecycle.md`](AI/instructions/qa-orchestrator-lifecycle.md) | Phases: fetch → analysis → design → cases → optional code review → execution strategy → summary; Azure DevOps / Jira via **MCP** when available, or pasted requirements |
+| [`AI/instructions/work-item-report-templates.md`](AI/instructions/work-item-report-templates.md) | Markdown skeletons for each report file |
+| [`AI/skills/qa-orchestrator.md`](AI/skills/qa-orchestrator.md) | Skill entry: when to use, checklist, STAF reminders |
+| [`.cursor/skills/staf-qa-orchestrator/SKILL.md`](.cursor/skills/staf-qa-orchestrator/SKILL.md) | Cursor stub pointing at the files above |
+
+**Outputs:** phase reports under **`QA/work-items/{Provider}-{WorkItemId}/`** (`01-pbi-fetch.md` … `07-summary-report.md`). See [`QA/README.md`](QA/README.md). These are separate from framework **HTML** test reports under `TestResults`.
+
+**MCP:** This repo ships the **Playwright C#** MCP under `MCPAgent/` for test authoring. **ADO** or **Jira** work-item fetch is optional — add those MCP servers in your editor if you want live work-item retrieval; otherwise paste the item into chat (documented as a gap in `01-pbi-fetch.md`).
+
+A ready-made prompt is in [AI-assisted automation](#ai-assisted-automation-copy-paste-prompts) under **Work item / PBI — full QA cycle**.
+
+---
+
 ## Project layout
 
 | Path | Purpose |
@@ -204,8 +238,9 @@ Then open **`TestResults`** under the test project output folder for HTML and sc
 | `STAF.Playwright.Tests/OpenAPI/placeholder.json` | OpenAPI spec for contract tests (JSONPlaceholder) |
 | `STAF.Playwright.Tests/testsetting.runsettings` | BaseUrl, ApiBaseUrl, Browser, Headless, Environment, etc. |
 | `STAF.Playwright.Tests/testdata.json` | Optional test data by environment (QA, UAT, …) |
-| `AI/instructions/` | Canonical AI playbook: persona, generation rules, debugging rules |
-| `AI/skills/` | Canonical per-topic skills (UI, API, DB, test data, reporting, framework) |
+| `AI/instructions/` | Canonical AI playbook: persona, generation rules, debugging rules, **qa-orchestrator-lifecycle**, **work-item-report-templates** |
+| `AI/skills/` | Canonical per-topic skills (UI, API, DB, test data, reporting, framework, **qa-orchestrator**) |
+| `QA/` | Orchestrator outputs: **`work-items/{Provider}-{Id}/`** phase `.md` reports (see `QA/README.md`) |
 | `.cursor/skills/` | Cursor **project skills** (stubs only — each points at a file under `AI/`) |
 | `.vscode/staf-ai/INDEX.md` | Table of contents for the same `AI/` files (VS Code / Copilot attach list) |
 | `MCPAgent/` | Playwright C# MCP server (included for use with Cursor, VS Code, or Visual Studio — see [Using the MCP agent](#using-the-mcp-agent)) |

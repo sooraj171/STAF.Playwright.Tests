@@ -64,7 +64,9 @@ When editing or generating code in this repo, follow these **STAF Playwright fra
 - `AI/instructions/system-prompt.md` — default QA-architect persona and guardrails
 - `AI/instructions/generation-rules.md` — coverage strategy, output format, optimization
 - `AI/instructions/debugging-rules.md` — failure analysis and flakiness playbook
-- `AI/skills/*.md` — deep rules per automation type
+- `AI/instructions/qa-orchestrator-lifecycle.md` — work-item / PBI end-to-end QA (STLC, ADO/Jira MCP, markdown reports under `QA/work-items/`)
+- `AI/instructions/work-item-report-templates.md` — templates for orchestrator phase reports
+- `AI/skills/*.md` — deep rules per automation type (including `qa-orchestrator.md`)
 
 **Cursor (project skills):** `.cursor/skills/*/SKILL.md` files are **thin stubs** that point to the same `AI/` paths so skills stay discoverable without duplicating content.
 

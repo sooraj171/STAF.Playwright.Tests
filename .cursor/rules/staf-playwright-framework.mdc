@@ -63,3 +63,5 @@ alwaysApply: true
 ## 5. Extended playbook (`AI/`)
 
 For enterprise-style guidance (skills per layer, generation output format, debugging), see **`AI/instructions/`** and **`AI/skills/`** in this repository. That folder is the **only** full copy of those rules. **Cursor** project skills under **`.cursor/skills/`** are stubs pointing at the same files; **VS Code** users can use **`.vscode/staf-ai/INDEX.md`** to open or attach the same paths in Copilot Chat.
+
+For **work-item / PBI–driven** end-to-end QA (fetch → analysis → design → cases → code review → execution strategy → markdown reports), use **`AI/instructions/qa-orchestrator-lifecycle.md`**, **`AI/skills/qa-orchestrator.md`**, and the Cursor skill **`staf-qa-orchestrator`** (outputs under **`QA/work-items/`**).

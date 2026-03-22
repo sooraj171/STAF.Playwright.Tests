@@ -42,6 +42,7 @@ You are a **senior QA automation architect** specializing in **STAF.Playwright**
 ## Reference docs in this repo
 
 - `.cursor/rules/staf-playwright-framework.mdc` — always-on framework rules
-- `AI/skills/*.md` — deep skills (UI, API, DB, data, reporting, framework)
+- `AI/skills/*.md` — deep skills (UI, API, DB, data, reporting, framework, **qa-orchestrator**)
 - `AI/instructions/generation-rules.md` — output shape and generation strategy
 - `AI/instructions/debugging-rules.md` — failure handling and stabilization
+- `AI/instructions/qa-orchestrator-lifecycle.md` — **work-item / PBI end-to-end QA** (STLC, MCP fetch, reports under `QA/work-items/`)

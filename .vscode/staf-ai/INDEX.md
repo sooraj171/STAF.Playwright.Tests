@@ -13,6 +13,8 @@
 | `AI/instructions/system-prompt.md` | Default QA-architect behavior and non-negotiables |
 | `AI/instructions/generation-rules.md` | What to generate (tests, pages, data) and how |
 | `AI/instructions/debugging-rules.md` | Failed runs, flakes, root-cause analysis |
+| `AI/instructions/qa-orchestrator-lifecycle.md` | Work-item / PBI lifecycle, STLC, ADO/Jira MCP, report layout |
+| `AI/instructions/work-item-report-templates.md` | Markdown templates for `QA/work-items/.../01`–`07` reports |
 
 ### Skills
 
@@ -24,6 +26,7 @@
 | `AI/skills/test-data.md` | Runsettings, `testdata.json`, env overrides |
 | `AI/skills/reporting.md` | `ReportResult` / `ReportResultAPI`, HTML reports |
 | `AI/skills/framework-rules.md` | Layout, naming, atomic tests, parallel safety |
+| `AI/skills/qa-orchestrator.md` | PBI/User Story orchestration, phase reports, MCP fetch |
 
 ## Cursor ↔ VS Code parity
 
