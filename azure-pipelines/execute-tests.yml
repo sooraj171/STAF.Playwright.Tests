@@ -79,12 +79,13 @@ parameters:
     type: string
     default: '0'
 
-  # Numeric ID from the build pipeline URL: .../_build?definitionId=123 → use 123
-  # (Do not use run number / build name like 20260328.2 — that is not the definition id.)
+  # Numeric ID from the build pipeline URL: .../_build?definitionId=2 → use 2
+  # Edit this default if your build pipeline has a different definitionId.
+  # When you Run pipeline, this value must be numeric — not the placeholder text.
   - name: buildPipelineDefinitionId
     displayName: Build pipeline definition ID (numeric)
     type: string
-    default: 'REPLACE_WITH_DEFINITION_ID'
+    default: '2'
 
   - name: buildId
     displayName: Specific build run ID (0 = latest successful from build pipeline)
