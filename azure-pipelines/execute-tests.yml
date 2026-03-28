@@ -28,7 +28,7 @@ schedules:
     displayName: Daily morning Smoke QA
     branches:
       include:
-        - main
+        - sooraj/DevMar21
     always: true
 
 trigger: none
