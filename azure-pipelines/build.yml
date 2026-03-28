@@ -13,8 +13,8 @@
 trigger:
   branches:
     include:
-      - main
-      - develop
+      - sooraj/DevMar21
+
   paths:
     include:
       - STAF.Playwright.Tests/**
