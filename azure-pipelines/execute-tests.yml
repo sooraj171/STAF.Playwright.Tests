@@ -1,0 +1,233 @@
+# =============================================================================
+# STAF Playwright — EXECUTION pipeline (no build)
+# =============================================================================
+# Purpose: Download pre-built "test-drop" from the build pipeline, install
+#          Playwright browsers, run MSTest via VSTest with TestCategory filtering
+#          and runsettings overrides from Library variable groups.
+#
+# Prerequisites:
+#   1. Create pipeline STAF-Playwright-Build (YAML: azure-pipelines/build.yml).
+#   2. Create Library groups STAF-Automation-QA and STAF-Automation-UAT with at least:
+#        baseUrl, username, password, apiBaseUrl, browser, headless
+#      (match names to overrideTestrunParameters / testsetting.runsettings).
+#      Mark password (and any secret) as secret in the group.
+#   3. Link those groups to this pipeline (or rely on "Authorize resources" on first run).
+#   4. Set parameter buildPipelineId to your build pipeline's numeric definition ID.
+#   5. Map code to Azure Test Cases: use [WorkItem(12345)] on test methods (MSTest),
+#      or associate automation in Test Plans; use testExecutionMode = testPlan with IDs.
+#
+# Triggers:
+#   - Manual run with parameters (environment, test category, execution mode).
+#   - Scheduled: daily Smoke on main (see schedules; uses parameter defaults).
+#   - On-demand from Test Plans: associate this pipeline with the plan / run from UI.
+# =============================================================================
+
+schedules:
+  # Daily morning Smoke (UTC). Adjust cron for your timezone.
+  - cron: '0 6 * * *'
+    displayName: Daily morning Smoke QA
+    branches:
+      include:
+        - main
+    always: true
+
+trigger: none
+
+parameters:
+  - name: environment
+    displayName: Target environment (selects Library variable group)
+    type: string
+    default: 'QA'
+    values:
+      - QA
+      - UAT
+
+  - name: testCategory
+    displayName: MSTest TestCategory filter
+    type: string
+    default: 'Smoke'
+    values:
+      - Smoke
+      - Regression
+      - All
+
+  - name: testExecutionMode
+    displayName: How tests are selected
+    type: string
+    default: 'testAssemblies'
+    values:
+      - testAssemblies
+      - testPlan
+
+  - name: testPlanId
+    displayName: Azure Test Plan ID (required for testExecutionMode = testPlan)
+    type: string
+    default: '0'
+
+  - name: testSuiteId
+    displayName: Test Suite ID(s), comma-separated (testExecutionMode = testPlan)
+    type: string
+    default: '0'
+
+  - name: testConfigurationId
+    displayName: Test configuration ID (use 0 to omit)
+    type: string
+    default: '0'
+
+  - name: buildPipelineId
+    displayName: Build pipeline definition ID (numeric, from the build pipeline URL)
+    type: string
+    default: 'REPLACE_WITH_BUILD_PIPELINE_ID'
+
+  - name: buildId
+    displayName: Specific build run ID (0 = latest successful from build pipeline)
+    type: string
+    default: '0'
+
+variables:
+  # Defaults (overridden by Library group when the same name exists there).
+  - name: browser
+    value: 'Chrome'
+  - name: headless
+    value: 'true'
+  - name: apiBaseUrl
+    value: 'https://jsonplaceholder.typicode.com'
+
+  - ${{ if eq(parameters.environment, 'QA') }}:
+      - group: STAF-Automation-QA
+  - ${{ if eq(parameters.environment, 'UAT') }}:
+      - group: STAF-Automation-UAT
+
+  # Pipeline parameter (QA/UAT) passed into runsettings as Environment — avoids clashing with a group key named "environment".
+  - name: runEnvironment
+    value: ${{ parameters.environment }}
+
+  testDropPath: '$(Pipeline.Workspace)/test-drop'
+  runSettingsFile: '$(Pipeline.Workspace)/test-drop/testsetting.runsettings'
+
+name: $(Date:yyyyMMdd)$(Rev:.r)-${{ parameters.environment }}-${{ parameters.testCategory }}
+
+stages:
+  - stage: Test
+    displayName: Download artifact and run tests
+    jobs:
+      - job: RunTests
+        displayName: VSTest (MSTest + Playwright)
+        pool:
+          vmImage: 'windows-latest'
+        steps:
+          - checkout: none
+
+          # Latest successful build from the build pipeline.
+          - task: DownloadPipelineArtifact@2
+            displayName: 'DownloadPipelineArtifact: test-drop (latest)'
+            condition: eq('${{ parameters.buildId }}', '0')
+            inputs:
+              buildType: 'specific'
+              project: '$(System.TeamProjectId)'
+              definition: '${{ parameters.buildPipelineId }}'
+              buildVersionToDownload: 'latest'
+              artifactName: 'test-drop'
+              targetPath: '$(testDropPath)'
+
+          # Pin to a specific pipeline run (reproducible execution).
+          - task: DownloadPipelineArtifact@2
+            displayName: 'DownloadPipelineArtifact: test-drop (specific build)'
+            condition: ne('${{ parameters.buildId }}', '0')
+            inputs:
+              buildType: 'specific'
+              project: '$(System.TeamProjectId)'
+              definition: '${{ parameters.buildPipelineId }}'
+              buildVersionToDownload: 'specific'
+              buildId: '${{ parameters.buildId }}'
+              artifactName: 'test-drop'
+              targetPath: '$(testDropPath)'
+
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+              $script = Join-Path "$(testDropPath)" "playwright.ps1"
+              if (-not (Test-Path $script)) {
+                Write-Error "playwright.ps1 not found at $script. Ensure publish output includes it or add a CopyFiles step in the build pipeline."
+              }
+              & pwsh -NoProfile -File $script install --with-deps
+            displayName: 'Install Playwright browsers (playwright.ps1)'
+            workingDirectory: '$(testDropPath)'
+
+          # VSTest: Smoke / Regression use TestCategory=... ; All runs without a filter line.
+          - task: VSTest@2
+            displayName: 'VSTest — assemblies (Smoke / Regression)'
+            condition: and(succeeded(), eq('${{ parameters.testExecutionMode }}', 'testAssemblies'), ne('${{ parameters.testCategory }}', 'All'))
+            inputs:
+              testSelector: 'testAssemblies'
+              testAssemblyVer2: |
+                **\STAF.Playwright.Tests.dll
+                !**\*TestAdapter.dll
+                !**\obj\**
+              searchFolder: '$(testDropPath)'
+              testFiltercriteria: 'TestCategory=${{ parameters.testCategory }}'
+              runSettingsFile: '$(runSettingsFile)'
+              overrideTestrunParameters: >
+                -BaseUrl "$(baseUrl)"
+                -ApiBaseUrl "$(apiBaseUrl)"
+                -Username "$(username)"
+                -Password "$(password)"
+                -Environment "$(runEnvironment)"
+                -Browser "$(browser)"
+                -Headless "$(headless)"
+              runInParallel: false
+              codeCoverageEnabled: false
+              otherConsoleOptions: '/Logger:trx;LogFileName=$(Agent.TempDirectory)/results.trx'
+              publishRunAttachments: true
+              uiTests: true
+
+          - task: VSTest@2
+            displayName: 'VSTest — assemblies (all categories)'
+            condition: and(succeeded(), eq('${{ parameters.testExecutionMode }}', 'testAssemblies'), eq('${{ parameters.testCategory }}', 'All'))
+            inputs:
+              testSelector: 'testAssemblies'
+              testAssemblyVer2: |
+                **\STAF.Playwright.Tests.dll
+                !**\*TestAdapter.dll
+                !**\obj\**
+              searchFolder: '$(testDropPath)'
+              runSettingsFile: '$(runSettingsFile)'
+              overrideTestrunParameters: >
+                -BaseUrl "$(baseUrl)"
+                -ApiBaseUrl "$(apiBaseUrl)"
+                -Username "$(username)"
+                -Password "$(password)"
+                -Environment "$(runEnvironment)"
+                -Browser "$(browser)"
+                -Headless "$(headless)"
+              runInParallel: false
+              codeCoverageEnabled: false
+              otherConsoleOptions: '/Logger:trx;LogFileName=$(Agent.TempDirectory)/results.trx'
+              publishRunAttachments: true
+              uiTests: true
+
+          - task: VSTest@2
+            displayName: 'VSTest — Azure Test Plan / suite'
+            condition: and(succeeded(), eq('${{ parameters.testExecutionMode }}', 'testPlan'))
+            inputs:
+              testSelector: 'testPlan'
+              testPlan: '${{ parameters.testPlanId }}'
+              testSuite: '${{ parameters.testSuiteId }}'
+              ${{ if ne(parameters.testConfigurationId, '0') }}:
+                testConfiguration: '${{ parameters.testConfigurationId }}'
+              testAssemblyVer2: |
+                **\STAF.Playwright.Tests.dll
+                !**\*TestAdapter.dll
+                !**\obj\**
+              searchFolder: '$(testDropPath)'
+              runSettingsFile: '$(runSettingsFile)'
+              overrideTestrunParameters: >
+                -BaseUrl "$(baseUrl)"
+                -ApiBaseUrl "$(apiBaseUrl)"
+                -Username "$(username)"
+                -Password "$(password)"
+                -Environment "$(runEnvironment)"
+                -Browser "$(browser)"
+                -Headless "$(headless)"
+              runInParallel: false
+              publishRunAttachments: true
+              uiTests: true

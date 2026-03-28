@@ -1,0 +1,90 @@
+# =============================================================================
+# STAF Playwright — BUILD pipeline
+# =============================================================================
+# Purpose: Restore, compile, and publish the test project; publish DLLs and
+#          runtime files as the "test-drop" artifact for the execution pipeline.
+#
+# Create this pipeline in Azure DevOps (Pipelines > New > Existing YAML).
+# Recommended name: STAF-Playwright-Build
+#
+# The execution pipeline downloads "test-drop" and does NOT rebuild.
+# =============================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - STAF.Playwright.Tests/**
+      - STAF.Playwright.Tests.sln
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+variables:
+  # Adjust to match your default branch / policy.
+  buildConfiguration: 'Release'
+  # Output folder for dotnet publish (becomes artifact root).
+  publishDir: '$(Build.ArtifactStagingDirectory)/test-drop'
+
+stages:
+  - stage: Build
+    displayName: Build and publish test drop
+    jobs:
+      - job: BuildJob
+        displayName: Restore, build, publish
+        pool:
+          vmImage: 'windows-latest'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          # Match STAF.Playwright.Tests.csproj (net10.0). Pin in global.json for CI stability.
+          - task: UseDotNet@2
+            displayName: 'Use .NET SDK (10.x)'
+            inputs:
+              packageType: 'sdk'
+              version: '10.x'
+              includePreviewVersions: true
+
+          - task: DotNetCoreCLI@2
+            displayName: 'dotnet restore'
+            inputs:
+              command: 'restore'
+              projects: 'STAF.Playwright.Tests.sln'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'dotnet publish (test project)'
+            inputs:
+              command: 'publish'
+              publishWebProjects: false
+              projects: 'STAF.Playwright.Tests/STAF.Playwright.Tests.csproj'
+              arguments: >-
+                --configuration $(buildConfiguration)
+                --no-restore
+                -o "$(publishDir)"
+
+          # Optional: copy a repo-local Playwright bootstrap script into the drop.
+          # Your requirement assumes playwright.ps1 is present in artifacts; the
+          # Microsoft.Playwright / STAF.Playwright packages often place it in output.
+          # Uncomment if you keep a checked-in script (e.g. MCPAgent/playwright.ps1).
+          # - task: CopyFiles@2
+          #   displayName: 'Copy playwright.ps1 into test-drop'
+          #   inputs:
+          #     SourceFolder: '$(Build.SourcesDirectory)/MCPAgent'
+          #     Contents: 'playwright.ps1'
+          #     TargetFolder: '$(publishDir)'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish artifact: test-drop'
+            inputs:
+              targetPath: '$(publishDir)'
+              artifact: 'test-drop'
+              publishLocation: 'pipeline'
