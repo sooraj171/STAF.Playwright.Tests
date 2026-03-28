@@ -16,8 +16,8 @@
 #      (match names to overrideTestrunParameters / testsetting.runsettings).
 #      Mark password (and any secret) as secret in the group.
 #   3. Link those groups to this pipeline (or rely on "Authorize resources" on first run).
-#   4. Set parameter buildPipelineName to match your BUILD pipeline's name in the
-#      Pipelines list (not the run number like 20260328.2, not the definitionId).
+#   4. Set parameter buildPipelineDefinitionId to the BUILD pipeline's numeric
+#      definition ID (?definitionId= in the pipeline URL — not the run name like 20260328.2).
 #   5. Map code to Azure Test Cases: use [WorkItem(12345)] on test methods (MSTest),
 #      or associate automation in Test Plans; use testExecutionMode = testPlan with IDs.
 #
@@ -79,24 +79,17 @@ parameters:
     type: string
     default: '0'
 
-  # Must match the build pipeline NAME in Azure DevOps (Pipelines list), e.g. STAF-Playwright-Build.
-  # Do NOT use: run number (20260328.2), build id, or definitionId — use the pipeline display name.
-  - name: buildPipelineName
-    displayName: Build pipeline name (exact name from Pipelines list)
+  # Numeric ID from the build pipeline URL: .../_build?definitionId=123 → use 123
+  # (Do not use run number / build name like 20260328.2 — that is not the definition id.)
+  - name: buildPipelineDefinitionId
+    displayName: Build pipeline definition ID (numeric)
     type: string
-    default: 'STAF-Playwright-Build'
+    default: 'REPLACE_WITH_DEFINITION_ID'
 
   - name: buildId
     displayName: Specific build run ID (0 = latest successful from build pipeline)
     type: string
     default: '0'
-
-# Links to the build pipeline by name (authorize this resource on first run).
-resources:
-  pipelines:
-    - pipeline: stafPlaywrightBuild
-      source: ${{ parameters.buildPipelineName }}
-      trigger: none
 
 variables:
   # Defaults (overridden by Library group when the same name exists there).
@@ -116,11 +109,11 @@ variables:
   - name: runEnvironment
     value: ${{ parameters.environment }}
 
-  # download: stafPlaywrightBuild places artifact under Pipeline.Workspace/<alias>/<artifactName>
+  # DownloadPipelineArtifact@2 targetPath (must match download steps below)
   - name: testDropPath
-    value: '$(Pipeline.Workspace)/stafPlaywrightBuild/test-drop'
+    value: '$(Pipeline.Workspace)/test-drop'
   - name: runSettingsFile
-    value: '$(Pipeline.Workspace)/stafPlaywrightBuild/test-drop/testsetting.runsettings'
+    value: '$(Pipeline.Workspace)/test-drop/testsetting.runsettings'
 
 name: $(Date:yyyyMMdd)$(Rev:.r)-${{ parameters.environment }}-${{ parameters.testCategory }}
 
@@ -135,24 +128,31 @@ stages:
         steps:
           - checkout: none
 
-          # Latest successful build from the linked build pipeline (by name, not definitionId).
-          - download: stafPlaywrightBuild
-            displayName: 'Download artifact test-drop (latest from build pipeline)'
-            artifact: test-drop
-            patterns: '**'
-            runVersion: latest
+          # DownloadPipelineArtifact@2 supports latest/specific; the shorthand `download:` step does not.
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download test-drop (latest build)'
             condition: eq('${{ parameters.buildId }}', '0')
+            inputs:
+              buildType: 'specific'
+              project: '$(System.TeamProjectId)'
+              definition: '${{ parameters.buildPipelineDefinitionId }}'
+              buildVersionToDownload: 'latest'
+              artifactName: 'test-drop'
+              targetPath: '$(Pipeline.Workspace)/test-drop'
 
-          # Pin to a specific build run (buildId = run id from build pipeline URL).
-          - download: stafPlaywrightBuild
-            displayName: 'Download artifact test-drop (specific build)'
-            artifact: test-drop
-            patterns: '**'
-            runVersion: specific
-            runId: '${{ parameters.buildId }}'
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download test-drop (specific build run)'
             condition: ne('${{ parameters.buildId }}', '0')
+            inputs:
+              buildType: 'specific'
+              project: '$(System.TeamProjectId)'
+              definition: '${{ parameters.buildPipelineDefinitionId }}'
+              buildVersionToDownload: 'specific'
+              buildId: '${{ parameters.buildId }}'
+              artifactName: 'test-drop'
+              targetPath: '$(Pipeline.Workspace)/test-drop'
 
-          # Pipeline resource download extracts under $(Pipeline.Workspace)/stafPlaywrightBuild/test-drop.
+          # Artifact extracts to targetPath above.
           # If a .zip is still present, expand it; then resolve single nested folder if DLL is not at root.
           - powershell: |
               $ErrorActionPreference = 'Stop'
