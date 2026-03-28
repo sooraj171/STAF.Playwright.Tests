@@ -5,6 +5,10 @@
 #          Playwright browsers, run MSTest via VSTest with TestCategory filtering
 #          and runsettings overrides from Library variable groups.
 #
+# Contract with build.yml:
+#   - Build publishes artifact name: test-drop (same as download: artifact: test-drop below).
+#   - Build uses dotnet publish output; execute does not build — same .NET 10.x SDK/runtime as build.
+#
 # Prerequisites:
 #   1. Create pipeline STAF-Playwright-Build (YAML: azure-pipelines/build.yml).
 #   2. Create Library groups STAF-Automation-QA and STAF-Automation-UAT with at least:
@@ -12,7 +16,8 @@
 #      (match names to overrideTestrunParameters / testsetting.runsettings).
 #      Mark password (and any secret) as secret in the group.
 #   3. Link those groups to this pipeline (or rely on "Authorize resources" on first run).
-#   4. Set parameter buildPipelineId to your build pipeline's numeric definition ID.
+#   4. Set parameter buildPipelineName to match your BUILD pipeline's name in the
+#      Pipelines list (not the run number like 20260328.2, not the definitionId).
 #   5. Map code to Azure Test Cases: use [WorkItem(12345)] on test methods (MSTest),
 #      or associate automation in Test Plans; use testExecutionMode = testPlan with IDs.
 #
@@ -74,15 +79,24 @@ parameters:
     type: string
     default: '0'
 
-  - name: buildPipelineId
-    displayName: Build pipeline definition ID (numeric, from the build pipeline URL)
+  # Must match the build pipeline NAME in Azure DevOps (Pipelines list), e.g. STAF-Playwright-Build.
+  # Do NOT use: run number (20260328.2), build id, or definitionId — use the pipeline display name.
+  - name: buildPipelineName
+    displayName: Build pipeline name (exact name from Pipelines list)
     type: string
-    default: 'REPLACE_WITH_BUILD_PIPELINE_ID'
+    default: 'STAF-Playwright-Build'
 
   - name: buildId
     displayName: Specific build run ID (0 = latest successful from build pipeline)
     type: string
     default: '0'
+
+# Links to the build pipeline by name (authorize this resource on first run).
+resources:
+  pipelines:
+    - pipeline: stafPlaywrightBuild
+      source: ${{ parameters.buildPipelineName }}
+      trigger: none
 
 variables:
   # Defaults (overridden by Library group when the same name exists there).
@@ -102,10 +116,11 @@ variables:
   - name: runEnvironment
     value: ${{ parameters.environment }}
 
+  # download: stafPlaywrightBuild places artifact under Pipeline.Workspace/<alias>/<artifactName>
   - name: testDropPath
-    value: '$(Pipeline.Workspace)/test-drop'
+    value: '$(Pipeline.Workspace)/stafPlaywrightBuild/test-drop'
   - name: runSettingsFile
-    value: '$(Pipeline.Workspace)/test-drop/testsetting.runsettings'
+    value: '$(Pipeline.Workspace)/stafPlaywrightBuild/test-drop/testsetting.runsettings'
 
 name: $(Date:yyyyMMdd)$(Rev:.r)-${{ parameters.environment }}-${{ parameters.testCategory }}
 
@@ -120,34 +135,25 @@ stages:
         steps:
           - checkout: none
 
-          # Latest successful build from the build pipeline.
-          - task: DownloadPipelineArtifact@2
-            displayName: 'DownloadPipelineArtifact: test-drop (latest)'
+          # Latest successful build from the linked build pipeline (by name, not definitionId).
+          - download: stafPlaywrightBuild
+            displayName: 'Download artifact test-drop (latest from build pipeline)'
+            artifact: test-drop
+            patterns: '**'
+            runVersion: latest
             condition: eq('${{ parameters.buildId }}', '0')
-            inputs:
-              buildType: 'specific'
-              project: '$(System.TeamProjectId)'
-              definition: '${{ parameters.buildPipelineId }}'
-              buildVersionToDownload: 'latest'
-              artifactName: 'test-drop'
-              targetPath: '$(testDropPath)'
 
-          # Pin to a specific pipeline run (reproducible execution).
-          - task: DownloadPipelineArtifact@2
-            displayName: 'DownloadPipelineArtifact: test-drop (specific build)'
+          # Pin to a specific build run (buildId = run id from build pipeline URL).
+          - download: stafPlaywrightBuild
+            displayName: 'Download artifact test-drop (specific build)'
+            artifact: test-drop
+            patterns: '**'
+            runVersion: specific
+            runId: '${{ parameters.buildId }}'
             condition: ne('${{ parameters.buildId }}', '0')
-            inputs:
-              buildType: 'specific'
-              project: '$(System.TeamProjectId)'
-              definition: '${{ parameters.buildPipelineId }}'
-              buildVersionToDownload: 'specific'
-              buildId: '${{ parameters.buildId }}'
-              artifactName: 'test-drop'
-              targetPath: '$(testDropPath)'
 
-          # DownloadPipelineArtifact@2 normally extracts contents to targetPath; the UI still
-          # offers a .zip for manual download. If your build publishes a .zip inside the
-          # artifact (or the agent leaves .zip files), expand them here before VSTest.
+          # Pipeline resource download extracts under $(Pipeline.Workspace)/stafPlaywrightBuild/test-drop.
+          # If a .zip is still present, expand it; then resolve single nested folder if DLL is not at root.
           - powershell: |
               $ErrorActionPreference = 'Stop'
               $drop = "$(testDropPath)"
@@ -159,19 +165,35 @@ stages:
               }
 
               $dllName = 'STAF.Playwright.Tests.dll'
-              if (-not (Get-ChildItem -LiteralPath $drop -Filter $dllName -File -ErrorAction SilentlyContinue)) {
+              $resolved = $drop
+              if (-not (Get-ChildItem -LiteralPath $resolved -Filter $dllName -File -ErrorAction SilentlyContinue)) {
                 $dirs = @(Get-ChildItem -LiteralPath $drop -Directory -ErrorAction SilentlyContinue)
                 if ($dirs.Count -eq 1) {
                   $nested = $dirs[0].FullName
                   if (Test-Path -LiteralPath (Join-Path $nested $dllName)) {
                     Write-Host "Using nested folder: $nested"
+                    $resolved = $nested
                     Write-Host "##vso[task.setvariable variable=testDropPath]$nested"
                     $rs = Join-Path $nested 'testsetting.runsettings'
                     Write-Host "##vso[task.setvariable variable=runSettingsFile]$rs"
                   }
                 }
               }
+
+              if (-not (Test-Path -LiteralPath (Join-Path $resolved $dllName))) {
+                Write-Host "Contents under $drop :"
+                Get-ChildItem -LiteralPath $drop -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+                throw "STAF.Playwright.Tests.dll not found after download. Expected artifact 'test-drop' from build.yml publish."
+              }
             displayName: 'Unzip artifact (if present) and resolve test folder'
+
+          # Must match STAF.Playwright.Tests.csproj (net10.0) — same major SDK as build.yml.
+          - task: UseDotNet@2
+            displayName: 'Use .NET SDK 10.x (matches build pipeline)'
+            inputs:
+              packageType: 'sdk'
+              version: '10.x'
+              includePreviewVersions: true
 
           - powershell: |
               $ErrorActionPreference = 'Stop'

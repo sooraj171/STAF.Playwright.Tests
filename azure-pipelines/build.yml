@@ -5,7 +5,8 @@
 #          runtime files as the "test-drop" artifact for the execution pipeline.
 #
 # Create this pipeline in Azure DevOps (Pipelines > New > Existing YAML).
-# Recommended name: STAF-Playwright-Build
+# Recommended pipeline list name: STAF-Playwright-Build (set via Pipelines → ⋮ → Rename;
+# YAML cannot change that display name — only the build RUN number below).
 #
 # The execution pipeline downloads "test-drop" and does NOT rebuild.
 # =============================================================================
@@ -19,6 +20,8 @@ trigger:
     include:
       - STAF.Playwright.Tests/**
       - STAF.Playwright.Tests.sln
+      # Include this file so pipeline definition changes trigger a new build + artifact.
+      - azure-pipelines/build.yml
 
 pr:
   branches:
@@ -26,7 +29,9 @@ pr:
       - main
       - develop
 
-name: $(Date:yyyyMMdd)$(Rev:.r)
+# Build number for each run (shown in run history, downloads, and links). Not the same as
+# the pipeline definition name in the Pipelines list (rename that in Azure DevOps UI).
+name: STAF-Playwright-Build-$(Date:yyyyMMdd)$(Rev:.r)
 
 variables:
   # Adjust to match your default branch / policy.
@@ -71,17 +76,28 @@ stages:
                 --no-restore
                 -o "$(publishDir)"
 
-          # Optional: copy a repo-local Playwright bootstrap script into the drop.
-          # Your requirement assumes playwright.ps1 is present in artifacts; the
-          # Microsoft.Playwright / STAF.Playwright packages often place it in output.
-          # Uncomment if you keep a checked-in script (e.g. MCPAgent/playwright.ps1).
-          # - task: CopyFiles@2
-          #   displayName: 'Copy playwright.ps1 into test-drop'
-          #   inputs:
-          #     SourceFolder: '$(Build.SourcesDirectory)/MCPAgent'
-          #     Contents: 'playwright.ps1'
-          #     TargetFolder: '$(publishDir)'
+          # dotnet publish (STAF.Playwright) emits playwright.ps1 and .playwright in output — no copy needed.
 
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+              $pub = "$(publishDir)"
+              $required = @(
+                'STAF.Playwright.Tests.dll',
+                'STAF.Playwright.Tests.deps.json',
+                'STAF.Playwright.Tests.runtimeconfig.json',
+                'testsetting.runsettings',
+                'playwright.ps1'
+              )
+              foreach ($f in $required) {
+                $p = Join-Path $pub $f
+                if (-not (Test-Path -LiteralPath $p)) {
+                  throw "Missing '$f' under publish folder. Execution pipeline expects these in artifact 'test-drop'. Path: $p"
+                }
+              }
+              Write-Host "Publish output OK; artifact name must stay 'test-drop' for execute-tests.yml."
+            displayName: 'Verify publish output before artifact upload'
+
+          # Artifact name MUST match azure-pipelines/execute-tests.yml (download: artifact: test-drop).
           - task: PublishPipelineArtifact@1
             displayName: 'Publish artifact: test-drop'
             inputs:
