@@ -65,22 +65,25 @@ stages:
               command: 'restore'
               projects: 'STAF.Playwright.Tests.sln'
 
-          - task: DotNetCoreCLI@2
-            displayName: 'dotnet publish (test project)'
-            inputs:
-              command: 'publish'
-              publishWebProjects: false
-              projects: 'STAF.Playwright.Tests/STAF.Playwright.Tests.csproj'
-              arguments: >-
-                --configuration $(buildConfiguration)
-                --no-restore
-                -o "$(publishDir)"
+          # DotNetCoreCLI@2 publish often ignores or mishandles -o; use dotnet CLI so output lands in test-drop.
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+              Set-Location '$(Build.SourcesDirectory)'
+              $pub = Join-Path $env:BUILD_ARTIFACTSTAGINGDIRECTORY 'test-drop'
+              New-Item -ItemType Directory -Path $pub -Force | Out-Null
+              dotnet publish 'STAF.Playwright.Tests\STAF.Playwright.Tests.csproj' `
+                --configuration '$(buildConfiguration)' `
+                --no-restore `
+                -o $pub
+              Write-Host "Published to: $pub"
+              Get-ChildItem -LiteralPath $pub -Filter '*.dll' | Select-Object -First 5 Name
+            displayName: 'dotnet publish (test project → test-drop)'
 
           # dotnet publish (STAF.Playwright) emits playwright.ps1 and .playwright in output — no copy needed.
 
           - powershell: |
               $ErrorActionPreference = 'Stop'
-              $pub = "$(publishDir)"
+              $pub = Join-Path $env:BUILD_ARTIFACTSTAGINGDIRECTORY 'test-drop'
               $required = @(
                 'STAF.Playwright.Tests.dll',
                 'STAF.Playwright.Tests.deps.json',
