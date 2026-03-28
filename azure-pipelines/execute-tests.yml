@@ -102,8 +102,10 @@ variables:
   - name: runEnvironment
     value: ${{ parameters.environment }}
 
-  testDropPath: '$(Pipeline.Workspace)/test-drop'
-  runSettingsFile: '$(Pipeline.Workspace)/test-drop/testsetting.runsettings'
+  - name: testDropPath
+    value: '$(Pipeline.Workspace)/test-drop'
+  - name: runSettingsFile
+    value: '$(Pipeline.Workspace)/test-drop/testsetting.runsettings'
 
 name: $(Date:yyyyMMdd)$(Rev:.r)-${{ parameters.environment }}-${{ parameters.testCategory }}
 
@@ -142,6 +144,34 @@ stages:
               buildId: '${{ parameters.buildId }}'
               artifactName: 'test-drop'
               targetPath: '$(testDropPath)'
+
+          # DownloadPipelineArtifact@2 normally extracts contents to targetPath; the UI still
+          # offers a .zip for manual download. If your build publishes a .zip inside the
+          # artifact (or the agent leaves .zip files), expand them here before VSTest.
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+              $drop = "$(testDropPath)"
+
+              Get-ChildItem -LiteralPath $drop -Filter '*.zip' -File -ErrorAction SilentlyContinue | ForEach-Object {
+                Write-Host "Expanding $($_.Name) into $drop"
+                Expand-Archive -LiteralPath $_.FullName -DestinationPath $drop -Force
+                Remove-Item -LiteralPath $_.FullName -Force
+              }
+
+              $dllName = 'STAF.Playwright.Tests.dll'
+              if (-not (Get-ChildItem -LiteralPath $drop -Filter $dllName -File -ErrorAction SilentlyContinue)) {
+                $dirs = @(Get-ChildItem -LiteralPath $drop -Directory -ErrorAction SilentlyContinue)
+                if ($dirs.Count -eq 1) {
+                  $nested = $dirs[0].FullName
+                  if (Test-Path -LiteralPath (Join-Path $nested $dllName)) {
+                    Write-Host "Using nested folder: $nested"
+                    Write-Host "##vso[task.setvariable variable=testDropPath]$nested"
+                    $rs = Join-Path $nested 'testsetting.runsettings'
+                    Write-Host "##vso[task.setvariable variable=runSettingsFile]$rs"
+                  }
+                }
+              }
+            displayName: 'Unzip artifact (if present) and resolve test folder'
 
           - powershell: |
               $ErrorActionPreference = 'Stop'
