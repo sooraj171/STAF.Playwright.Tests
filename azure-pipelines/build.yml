@@ -100,6 +100,8 @@ stages:
               Write-Host "Publish output OK; artifact name must stay 'test-drop' for execute-tests.yml."
             displayName: 'Verify publish output before artifact upload'
 
+          # Artifact layout: flat publish output (DLL at test-drop root). Release/VSTest: searchFolder
+          # = .../test-drop, assemblies = **\STAF.Playwright.Tests.dll — NOT **\bin\**\... (no bin folder).
           # Artifact name MUST match azure-pipelines/execute-tests.yml (download: artifact: test-drop).
           - task: PublishPipelineArtifact@1
             displayName: 'Publish artifact: test-drop'
