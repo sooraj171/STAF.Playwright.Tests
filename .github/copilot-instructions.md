@@ -55,3 +55,22 @@ When editing or generating code in this repo, follow these **STAF Playwright fra
 - Do not duplicate existing page or helper methods; reuse and extend what the framework already provides.
 - Keep files within the established structure (`Tests/`, `Pages/`, `Tests/Excel/`, `OpenAPI/`) so the project remains easy to navigate.
 
+---
+
+## 5. AI handbook (`AI/`) — single source of truth
+
+**Canonical rule text lives only under `AI/`** (instructions + skills). Do not maintain a second full copy elsewhere.
+
+- `AI/instructions/system-prompt.md` — default QA-architect persona and guardrails
+- `AI/instructions/generation-rules.md` — coverage strategy, output format, optimization
+- `AI/instructions/debugging-rules.md` — failure analysis and flakiness playbook
+- `AI/instructions/qa-orchestrator-lifecycle.md` — work-item / PBI end-to-end QA (STLC, ADO/Jira MCP, markdown reports under `QA/work-items/`)
+- `AI/instructions/work-item-report-templates.md` — templates for orchestrator phase reports
+- `AI/skills/*.md` — deep rules per automation type (including `qa-orchestrator.md`)
+
+**Cursor (project skills):** `.cursor/skills/*/SKILL.md` files are **thin stubs** that point to the same `AI/` paths so skills stay discoverable without duplicating content.
+
+**VS Code:** use **`.vscode/staf-ai/INDEX.md`** as the table of contents for the same `AI/` files (attach them in Copilot Chat as needed).
+
+When generating tests, follow or attach these files so output stays **STAF.Playwright**-aligned (POM, `ConfigManager`, reporting, parallel safety).
+

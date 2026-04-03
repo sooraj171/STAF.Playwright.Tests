@@ -1,0 +1,111 @@
+# =============================================================================
+# STAF Playwright — BUILD pipeline
+# =============================================================================
+# Purpose: Restore, compile, and publish the test project; publish DLLs and
+#          runtime files as the "test-drop" artifact for the execution pipeline.
+#
+# Create this pipeline in Azure DevOps (Pipelines > New > Existing YAML).
+# Recommended pipeline list name: STAF-Playwright-Build (set via Pipelines → ⋮ → Rename;
+# YAML cannot change that display name — only the build RUN number below).
+#
+# The execution pipeline downloads "test-drop" and does NOT rebuild.
+# =============================================================================
+
+trigger:
+  branches:
+    include:
+      - sooraj/DevMar21
+
+  paths:
+    include:
+      - STAF.Playwright.Tests/**
+      - STAF.Playwright.Tests.sln
+      # Include this file so pipeline definition changes trigger a new build + artifact.
+      - azure-pipelines/build.yml
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+# Build number for each run (shown in run history, downloads, and links). Not the same as
+# the pipeline definition name in the Pipelines list (rename that in Azure DevOps UI).
+name: STAF-Playwright-Build-$(Date:yyyyMMdd)$(Rev:.r)
+
+variables:
+  # Adjust to match your default branch / policy.
+  buildConfiguration: 'Release'
+  # Output folder for dotnet publish (becomes artifact root).
+  publishDir: '$(Build.ArtifactStagingDirectory)/test-drop'
+
+stages:
+  - stage: Build
+    displayName: Build and publish test drop
+    jobs:
+      - job: BuildJob
+        displayName: Restore, build, publish
+        pool:
+          vmImage: 'windows-latest'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          # Match STAF.Playwright.Tests.csproj (net10.0). Pin in global.json for CI stability.
+          - task: UseDotNet@2
+            displayName: 'Use .NET SDK (10.x)'
+            inputs:
+              packageType: 'sdk'
+              version: '10.x'
+              includePreviewVersions: true
+
+          - task: DotNetCoreCLI@2
+            displayName: 'dotnet restore'
+            inputs:
+              command: 'restore'
+              projects: 'STAF.Playwright.Tests.sln'
+
+          # DotNetCoreCLI@2 publish often ignores or mishandles -o; use dotnet CLI so output lands in test-drop.
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+              Set-Location '$(Build.SourcesDirectory)'
+              $pub = Join-Path $env:BUILD_ARTIFACTSTAGINGDIRECTORY 'test-drop'
+              New-Item -ItemType Directory -Path $pub -Force | Out-Null
+              dotnet publish 'STAF.Playwright.Tests\STAF.Playwright.Tests.csproj' `
+                --configuration '$(buildConfiguration)' `
+                --no-restore `
+                -o $pub
+              Write-Host "Published to: $pub"
+              Get-ChildItem -LiteralPath $pub -Filter '*.dll' | Select-Object -First 5 Name
+            displayName: 'dotnet publish (test project → test-drop)'
+
+          # dotnet publish (STAF.Playwright) emits playwright.ps1 and .playwright in output — no copy needed.
+
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+              $pub = Join-Path $env:BUILD_ARTIFACTSTAGINGDIRECTORY 'test-drop'
+              $required = @(
+                'STAF.Playwright.Tests.dll',
+                'STAF.Playwright.Tests.deps.json',
+                'STAF.Playwright.Tests.runtimeconfig.json',
+                'testsetting.runsettings',
+                'playwright.ps1'
+              )
+              foreach ($f in $required) {
+                $p = Join-Path $pub $f
+                if (-not (Test-Path -LiteralPath $p)) {
+                  throw "Missing '$f' under publish folder. Execution pipeline expects these in artifact 'test-drop'. Path: $p"
+                }
+              }
+              Write-Host "Publish output OK; artifact name must stay 'test-drop' for execute-tests.yml."
+            displayName: 'Verify publish output before artifact upload'
+
+          # Artifact layout: flat publish output (DLL at test-drop root). Release/VSTest: searchFolder
+          # = .../test-drop, assemblies = **\STAF.Playwright.Tests.dll — NOT **\bin\**\... (no bin folder).
+          # Artifact name MUST match azure-pipelines/execute-tests.yml (download: artifact: test-drop).
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish artifact: test-drop'
+            inputs:
+              targetPath: '$(publishDir)'
+              artifact: 'test-drop'
+              publishLocation: 'pipeline'
