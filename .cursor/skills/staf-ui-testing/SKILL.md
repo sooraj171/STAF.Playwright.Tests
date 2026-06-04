@@ -11,3 +11,5 @@ description: >-
 **Canonical content (single source of truth):** read and follow the full skill at **`AI/skills/ui-testing.md`** (repository root).
 
 Do not maintain a second copy of those rules in this file. If anything conflicts, **`AI/skills/ui-testing.md`** and **`.cursor/rules/staf-playwright-framework.mdc`** win.
+
+Templates: [reference.md](reference.md) · Index: [MASTER.md](../MASTER.md)
