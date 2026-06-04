@@ -2,7 +2,7 @@
 
 **Sample implementation** of the [STAF.Playwright](https://www.nuget.org/packages/STAF.Playwright) framework — a .NET test automation framework for web and API testing using **Microsoft Playwright** and **MSTest**. This repository provides a ready-to-run project so you can clone, restore, and execute tests with minimal setup.
 
-**Using AI to write tests?** See [AI-assisted automation (copy-paste prompts)](#ai-assisted-automation-copy-paste-prompts) for `@`/`attach` bundles and ready-made prompts.
+**Using AI to write tests?** Start with **[AGENTS.md](AGENTS.md)** (cross-tool entry), then [AI-assisted automation (copy-paste prompts)](#ai-assisted-automation-copy-paste-prompts) for `@`/`attach` bundles and ready-made prompts.
 
 ---
 
@@ -25,6 +25,7 @@ STAF (Simple Test Automation Framework) provides base classes, page object suppo
 - **Excel** – `ExcelDriver` sample (create, read, write, compare workbooks)
 - **HTML reports** – Per-test and final aggregated report (`ResultTemplateFinal.html`) in `TestResults`, with screenshots on failure
 - **Configuration** – `testsetting.runsettings` and optional `testdata.json` with environment support
+- **AI agents & skills** – Cursor project skills, GitHub Copilot instructions, and Visual Studio **custom agents** (STAF UI Automation, STAF API Automation, STAF Contract Automation, STAF QA Orchestrator). See [AI agents and skills](#ai-agents-and-skills).
 - **AI QA Orchestrator (work items)** – STLC-aligned playbook and phase markdown reports under `QA/work-items/` (Azure DevOps / Jira via MCP when configured, or pasted requirements). See [Work-item / PBI QA (orchestrator)](#work-item--pbi-qa-orchestrator).
 
 ---
@@ -83,10 +84,13 @@ Open the **repository root** (the folder that contains `STAF.Playwright.Tests.sl
 
 **Suggested bundles**
 
-- **UI automation:** `AI/instructions/system-prompt.md`, `AI/instructions/generation-rules.md`, `AI/skills/ui-testing.md`, `AI/skills/reporting.md`, `AI/skills/test-data.md`, `AI/skills/framework-rules.md`
-- **API automation:** same instructions + `AI/skills/api-testing.md`, `AI/skills/test-data.md`, `AI/skills/framework-rules.md`
+- **UI automation:** VS → `@staf-ui-automation` · Cursor → `staf-ui-testing` · Attach: `AI/instructions/system-prompt.md`, `AI/instructions/generation-rules.md`, `AI/skills/ui-testing.md`, `AI/skills/reporting.md`, `AI/skills/test-data.md`, `AI/skills/framework-rules.md`
+- **API automation:** VS → `@staf-api-automation` · Cursor → `staf-api-testing` · same instructions + `AI/skills/api-testing.md`
+- **Contract tests:** VS → `@staf-contract-automation` · Attach: `AI/skills/framework-rules.md` + golden `Tests/ContractTests.cs`
 - **After a failure:** `AI/instructions/debugging-rules.md` + the skill for the layer that failed (e.g. `AI/skills/ui-testing.md`)
-- **Work item / PBI (STLC reports):** `AI/instructions/qa-orchestrator-lifecycle.md`, `AI/instructions/work-item-report-templates.md`, `AI/skills/qa-orchestrator.md` — Cursor: `@.cursor/skills/staf-qa-orchestrator/SKILL.md`. Optionally configure an **Azure DevOps** or **Jira** MCP server in Cursor/VS Code so the agent can fetch the item; if not available, paste the description and acceptance criteria.
+- **Work item / PBI (STLC reports):** VS → `@staf-qa-orchestrator` · Cursor → `staf-qa-orchestrator` · Attach: `AI/instructions/qa-orchestrator-lifecycle.md`, `AI/instructions/work-item-report-templates.md`, `AI/skills/qa-orchestrator.md`. Optionally configure **Azure DevOps** or **Jira** MCP; if not available, paste the description and acceptance criteria.
+
+See [AI agents and skills](#ai-agents-and-skills) for the full agent and skill reference.
 
 ### 3. Copy a sample prompt (fill in the brackets)
 
@@ -204,9 +208,66 @@ Then open **`TestResults`** under the test project output folder for HTML and sc
 
 ---
 
+## AI agents and skills
+
+This repo ships a **unified AI playbook** under [`AI/`](AI/) plus editor-specific entry points. Canonical rule text lives **only** in `AI/`; Cursor skills under [`.cursor/skills/`](.cursor/skills/) are stubs that point there.
+
+**Start here:** [`AGENTS.md`](AGENTS.md) · Quick tasks: [`AI/instructions/QUICK_START.md`](AI/instructions/QUICK_START.md) · Setup by editor: [`AI/instructions/ai-setup.md`](AI/instructions/ai-setup.md)
+
+### Visual Studio custom agents (GitHub Copilot)
+
+In **Visual Studio 2026 (18.4+)** with GitHub Copilot, pick a specialized agent from the **agent picker** or type its handle in chat:
+
+| Agent | Handle | Use for |
+|-------|--------|---------|
+| **STAF UI Automation** | `@staf-ui-automation` | UI tests, page objects (`BaseTest`, `BasePage`, `ReportResult`) |
+| **STAF API Automation** | `@staf-api-automation` | REST tests (`TestBaseAPI`, `ApiClient`, `ReportResultAPI`) |
+| **STAF Contract Automation** | `@staf-contract-automation` | OpenAPI contract tests (`OpenApiContractTestBase`, specs in `OpenAPI/`) |
+| **STAF QA Orchestrator** | `@staf-qa-orchestrator` | PBI / work-item STLC — phase reports under `QA/work-items/` |
+
+Agent definitions: [`.github/agents/`](.github/agents/) · Shared Copilot rules: [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
+
+### Cursor project skills
+
+Cursor discovers skills from [`.cursor/skills/*/SKILL.md`](.cursor/skills/). Index: [`.cursor/skills/MASTER.md`](.cursor/skills/MASTER.md). Reference by name in Composer (e.g. *"using staf-ui-testing, create…"*) or attach the matching `AI/skills/*.md` file.
+
+| Skill | Use for | Canonical file |
+|-------|---------|----------------|
+| `staf-ui-testing` | UI tests, page objects | [`AI/skills/ui-testing.md`](AI/skills/ui-testing.md) |
+| `staf-api-testing` | API tests | [`AI/skills/api-testing.md`](AI/skills/api-testing.md) |
+| `staf-framework-rules` | Layout, naming, parallel safety | [`AI/skills/framework-rules.md`](AI/skills/framework-rules.md) |
+| `staf-reporting` | HTML step reports | [`AI/skills/reporting.md`](AI/skills/reporting.md) |
+| `staf-test-data` | Runsettings, `testdata.json` | [`AI/skills/test-data.md`](AI/skills/test-data.md) |
+| `staf-db-testing` | DB validation | [`AI/skills/db-testing.md`](AI/skills/db-testing.md) |
+| `staf-qa-orchestrator` | Work-item / PBI QA cycle | [`AI/skills/qa-orchestrator.md`](AI/skills/qa-orchestrator.md) |
+| `staf-ai-instructions` | Generation + debugging playbook | [`AI/instructions/`](AI/instructions/) |
+| `staf-ai-context` | Minimize tokens — which `@` files to attach | [`AI/instructions/ai-setup.md`](AI/instructions/ai-setup.md) |
+
+Always-on Cursor rules: [`.cursor/rules/staf-playwright-framework.mdc`](.cursor/rules/staf-playwright-framework.mdc) · [`.cursor/cursor.rules`](.cursor/cursor.rules)
+
+### VS Code (GitHub Copilot)
+
+VS Code does not use the `.github/agents/` files directly. Instead:
+
+1. Repo instructions load from [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
+2. Attach handbook files listed in [`.vscode/staf-ai/INDEX.md`](.vscode/staf-ai/INDEX.md).
+3. Setup notes: [`.vscode/README.md`](.vscode/README.md).
+
+For work-item QA, attach `AI/instructions/qa-orchestrator-lifecycle.md` and `AI/skills/qa-orchestrator.md` (same content the **STAF QA Orchestrator** VS agent uses).
+
+---
+
 ## Work-item / PBI QA (orchestrator)
 
-For **end-to-end QA** from a **PBI, User Story, or Bug** (not only “write one test”), the repo includes an **STLC-aligned** playbook:
+For **end-to-end QA** from a **PBI, User Story, or Bug** (not only “write one test”), use the **STAF QA Orchestrator** agent or skill:
+
+| Tool | How to invoke |
+|------|----------------|
+| **Visual Studio Copilot** | Agent picker or `@staf-qa-orchestrator` → [`.github/agents/staf-qa-orchestrator.agent.md`](.github/agents/staf-qa-orchestrator.agent.md) |
+| **Cursor** | Skill `staf-qa-orchestrator` or `@.cursor/skills/staf-qa-orchestrator/SKILL.md` |
+| **VS Code Copilot** | Attach `AI/instructions/qa-orchestrator-lifecycle.md` + `AI/skills/qa-orchestrator.md` (see [`.vscode/staf-ai/INDEX.md`](.vscode/staf-ai/INDEX.md)) |
+
+Playbook and templates:
 
 | Doc | Purpose |
 |-----|--------|
