@@ -1,76 +1,207 @@
-# Project instructions for GitHub Copilot (VS Code / GitHub Agents)
+# GitHub Copilot — STAF.Playwright.Tests
 
-When editing or generating code in this repo, follow these **STAF Playwright framework rules** so that UI, API, contract, and Excel tests stay consistent with the `STAF.Playwright.Tests` project.
-
----
-
-## 1. Framework
-
-- All **UI tests** must inherit from **BaseTest** from `STAF.Playwright.Framework`.
-- All **API tests** must inherit from **TestBaseAPI** from `STAF.Playwright.Framework`.
-- All **OpenAPI contract tests** must inherit from **OpenApiContractTestBase** from `STAF.Playwright.Framework.ContractTesting` and override `OpenApiSpecFolder` to point at the `OpenAPI` folder copied to the test output.
-- Do **not** create your own Playwright browser/page lifecycle in tests; use the `BaseTest`-provided `Page` and configuration from `ConfigManager`.
-- Assembly-level initialization/cleanup must delegate to `Framework.AssemblyInit` as in `AssemblyInit` so HTML reports (`ResultTemplate.html`, `ResultTemplateFinal.html`) are produced correctly.
-- Use **runsettings parameters** (`BaseUrl`, `ApiBaseUrl`, `Browser`, `Headless`, `Environment`, etc.) via `ConfigManager.GetParameter(...)` instead of hardcoding values.
-
-## 2. Tool usage (MCP / code generation)
-
-- When **navigating** in UI tests, use `Page.GotoAsync(...)` with URLs from `ConfigManager`; do not spin up your own `IPlaywright`/`IBrowser` instances.
-- When **interacting with elements** in page objects, rely on `BasePage` helpers:
-  - `WaitForElementVisibleAsync(locator, timeoutMs)`
-  - `EnterTextAsync(locator, text, testName, stepDescription)`
-  - `PressAsync(locator, key, testName, stepDescription)`
-- When **reporting UI steps**, use `ReportResult.ReportResultPass(...)`, `ReportResult.ReportResultFail(...)`, etc., passing `Page` and `TestContext`.
-- For **API tests**, use `ApiClient` and `ReportResultAPI` from `TestBaseAPI` instead of creating new HTTP clients or custom logging.
-- For **contract tests**, call `RunAllContractTestsAsync(...)` and `AssertAllContractTestsPassed(...)` from `OpenApiContractTestBase` rather than reimplementing contract validation.
-- For **Excel operations**, use `ExcelDriver` from `STAF.Playwright.Framework.Excel` for creating, saving, opening, and comparing workbooks.
-- Generated code must use the **framework abstraction layer** wherever possible. Do **not** bypass it with raw Playwright or .NET calls when an equivalent helper exists.
-
-## 3. Test creation workflow
-
-1. **Identify scenario and test type**
-   - UI, API, contract, or Excel.
-2. **Select the correct base class**
-   - UI → `BaseTest`
-   - API → `TestBaseAPI`
-   - Contract → `OpenApiContractTestBase`
-3. **Page Objects for UI tests**
-   - Look in `Pages/` (e.g. `GooglePage`) before creating new pages.
-   - New pages should inherit from `BasePage`, accept `IPage` and `TestContext`, and expose:
-     - `ILocator` properties using `Page.Locator(...)` for elements.
-     - High-level methods that use `WaitForElementVisibleAsync`, `EnterTextAsync`, `PressAsync`, and `ReportResult`.
-4. **Centralize locators and actions**
-   - Keep locators on page classes; avoid writing raw selectors inside tests.
-   - Tests should call page methods (e.g. `VerifyGooglePageIsDisplayed`, `SearchFor(...)`), not direct Playwright calls.
-5. **Use configuration and reporting**
-   - Use `ConfigManager.GetParameter(...)` to read `BaseUrl`, `ApiBaseUrl`, and other parameters defined in `testsetting.runsettings`.
-   - Use `ReportResult` / `ReportResultAPI` for all important steps, in addition to MSTest assertions.
-
-## 4. Coding standards
-
-- Prefer **stable selectors** (IDs, data attributes, semantic attributes) when defining `ILocator`s; avoid brittle, deeply nested CSS or XPath.
-- Keep **page classes cohesive and focused**, grouping elements and actions per page/screen.
-- Name tests clearly and follow **AAA (Arrange–Act–Assert)** in test bodies.
-- Avoid `Thread.Sleep` and arbitrary `Task.Delay`; always use framework waits such as `WaitForElementVisibleAsync`.
-- Do not duplicate existing page or helper methods; reuse and extend what the framework already provides.
-- Keep files within the established structure (`Tests/`, `Pages/`, `Tests/Excel/`, `OpenAPI/`) so the project remains easy to navigate.
+**Master reference:** [AI/instructions/system-prompt.md](../AI/instructions/system-prompt.md) and [AI/skills/](../AI/skills/) — single source of truth for all platforms (Visual Studio, VS Code, Cursor).
 
 ---
 
-## 5. AI handbook (`AI/`) — single source of truth
+## Platform-Specific Entry Points
 
-**Canonical rule text lives only under `AI/`** (instructions + skills). Do not maintain a second full copy elsewhere.
+| Tool | Where Instructions Load | What to Read |
+|------|---|---|
+| **Visual Studio** | `.github/copilot-instructions.md` (this file) | **Quick Rules** below + attach `AI/skills/*.md` as needed |
+| **VS Code** | `.vscode/README.md` + `.github/copilot-instructions.md` | [Quick Rules](#quick-rules) + [`.vscode/staf-ai/INDEX.md`](../.vscode/staf-ai/INDEX.md) |
+| **Cursor** | `.cursor/skills/` + `.cursor/cursor.rules` | [MASTER.md](../.cursor/skills/MASTER.md) + always-on `.cursor/rules/staf-playwright-framework.mdc` |
 
-- `AI/instructions/system-prompt.md` — default QA-architect persona and guardrails
-- `AI/instructions/generation-rules.md` — coverage strategy, output format, optimization
-- `AI/instructions/debugging-rules.md` — failure analysis and flakiness playbook
-- `AI/instructions/qa-orchestrator-lifecycle.md` — work-item / PBI end-to-end QA (STLC, ADO/Jira MCP, markdown reports under `QA/work-items/`)
-- `AI/instructions/work-item-report-templates.md` — templates for orchestrator phase reports
-- `AI/skills/*.md` — deep rules per automation type (including `qa-orchestrator.md`)
+---
 
-**Cursor (project skills):** `.cursor/skills/*/SKILL.md` files are **thin stubs** that point to the same `AI/` paths so skills stay discoverable without duplicating content.
+## Quick Rules
 
-**VS Code:** use **`.vscode/staf-ai/INDEX.md`** as the table of contents for the same `AI/` files (attach them in Copilot Chat as needed).
+### Framework Basics
 
-When generating tests, follow or attach these files so output stays **STAF.Playwright**-aligned (POM, `ConfigManager`, reporting, parallel safety).
+- **UI Tests:** inherit `BaseTest` (has `Page`, `TestContext`, framework lifecycle)
+- **API Tests:** inherit `TestBaseAPI` (no browser; use `ApiClient`)
+- **Contract Tests:** inherit `OpenApiContractTestBase`; override `OpenApiSpecFolder`
+- **Pages:** inherit `BasePage`; use `ILocator` properties and framework helpers only
 
+### Critical Constraints
+
+- **No custom Playwright lifecycle** in tests — use `BaseTest` `Page` and `ConfigManager`
+- **No `Thread.Sleep`** — use `WaitForElementVisibleAsync` and framework waits
+- **No raw locators in tests** — call page object methods only
+- **Assertions + reporting** in page methods and tests via `ReportResult` / `ReportResultAPI`
+
+### Core Methods
+
+| Action | UI Pattern | API Pattern |
+|--------|-----------|-------------|
+| **Navigate** | `Page.GotoAsync(ConfigManager.GetParameter("BaseUrl"))` | N/A |
+| **Find / interact** | `WaitForElementVisibleAsync`, `EnterTextAsync`, `PressAsync` on page | N/A |
+| **Report Step** | `ReportResult.ReportResultPass/Fail(...)` | `ReportResultAPI.ReportResultPass/Fail(...)` |
+| **HTTP** | N/A | `ApiClient.GetAsync(...)` etc. |
+| **Contract** | N/A | `RunAllContractTestsAsync` + `AssertAllContractTestsPassed` |
+
+### File Naming = Class Naming
+
+- File: `GooglePage.cs` → Class: `GooglePage` (inherits `BasePage`)
+- File: `Test1.cs` → Class: `Test1` (inherits `BaseTest`)
+- File: `ApiTests.cs` → Class: `ApiTests` (inherits `TestBaseAPI`)
+
+---
+
+## Three Core Workflows
+
+### 1️⃣ Create UI Test
+
+**Where:** `STAF.Playwright.Tests/Tests/{TestClass}.cs`  
+**What:** New `[TestMethod]` in class inheriting `BaseTest`
+
+```csharp
+[TestMethod]
+public async Task GoogleSearch_Playwright_ReturnsResults()
+{
+    await Page.GotoAsync(ConfigManager.GetParameter("BaseUrl") ?? "https://www.google.com");
+    var googlePage = new GooglePage(Page, TestContext);
+    await googlePage.VerifyGooglePageIsDisplayed();
+    await googlePage.SearchFor("Playwright");
+}
+```
+
+**Golden files:** `STAF.Playwright.Tests/Pages/GooglePage.cs`, `STAF.Playwright.Tests/Tests/Test1.cs`  
+**Full details:** [AI/skills/ui-testing.md](../AI/skills/ui-testing.md)
+
+---
+
+### 2️⃣ Create Page Object
+
+**Where:** `STAF.Playwright.Tests/Pages/{Screen}Page.cs`  
+**What:** Locators + high-level methods (this repo uses POM without a separate Actions layer)
+
+**Page template:**
+
+```csharp
+public class MyScreenPage : BasePage
+{
+    public MyScreenPage(IPage page, TestContext testContext) : base(page, testContext) { }
+
+    public ILocator SubmitButton => Page.Locator("[data-testid='submit']");
+
+    public async Task VerifyPageLoadedAsync()
+    {
+        if (await WaitForElementVisibleAsync(SubmitButton, 5000))
+            await ReportResult.ReportResultPass(Page, TestContext, nameof(VerifyPageLoadedAsync), "Page loaded");
+        else
+        {
+            await ReportResult.ReportResultFail(Page, TestContext, nameof(VerifyPageLoadedAsync), "Page not loaded");
+            Assert.Fail("Page not loaded");
+        }
+    }
+}
+```
+
+**Golden file:** `STAF.Playwright.Tests/Pages/GooglePage.cs`  
+**Full details:** [AI/skills/ui-testing.md](../AI/skills/ui-testing.md)
+
+---
+
+### 3️⃣ Create API Test
+
+**Where:** `STAF.Playwright.Tests/Tests/{Name}Tests.cs`  
+**What:** Class inheriting `TestBaseAPI`
+
+```csharp
+[TestMethod]
+public async Task Api_GetPost_ReturnsOkAndBody()
+{
+    var response = await ApiClient.GetAsync("/posts/1").ConfigureAwait(false);
+    var body = await ApiClient.GetResponseAsStringAsync(response).ConfigureAwait(false);
+
+    await ReportResultAPI.ReportResultPass(TestContext, nameof(Api_GetPost_ReturnsOkAndBody),
+        $"GET /posts/1 - Status: {(int)response.StatusCode}").ConfigureAwait(false);
+
+    Assert.IsTrue(response.IsSuccessStatusCode);
+    Assert.IsFalse(string.IsNullOrWhiteSpace(body));
+}
+```
+
+**Golden file:** `STAF.Playwright.Tests/Tests/ApiTests.cs`  
+**Full details:** [AI/skills/api-testing.md](../AI/skills/api-testing.md)
+
+---
+
+## Testing & Running
+
+```powershell
+# Run specific test
+dotnet test --filter "FullyQualifiedName~STAF.Playwright.Test1.TestMethod1" `
+    --settings STAF.Playwright.Tests/testsetting.runsettings
+
+# Run test class
+dotnet test --filter "ClassName~ApiTests" --settings STAF.Playwright.Tests/testsetting.runsettings
+
+# Run all tests
+dotnet test --settings STAF.Playwright.Tests/testsetting.runsettings
+```
+
+---
+
+## Resource Map
+
+| Need | Open | Notes |
+|------|------|-------|
+| **Persona & guardrails** | [AI/instructions/system-prompt.md](../AI/instructions/system-prompt.md) | Default QA-architect behavior |
+| **Generation rules** | [AI/instructions/generation-rules.md](../AI/instructions/generation-rules.md) | Output format, coverage |
+| **Debugging** | [AI/instructions/debugging-rules.md](../AI/instructions/debugging-rules.md) | Failures, flakes |
+| **Quick start** | [AI/instructions/QUICK_START.md](../AI/instructions/QUICK_START.md) | Platform navigation |
+| **Cursor skills index** | [.cursor/skills/MASTER.md](../.cursor/skills/MASTER.md) | Cursor skill picker |
+| **VS Code handbook index** | [.vscode/staf-ai/INDEX.md](../.vscode/staf-ai/INDEX.md) | Attach list for Copilot |
+| **VS custom agents** | [agents/](agents/) | UI, API, contract, QA orchestrator |
+| **Repo agents entry** | [AGENTS.md](../AGENTS.md) | Cross-tool summary |
+| **Golden examples** | `GooglePage.cs`, `Test1.cs`, `ApiTests.cs`, `ContractTests.cs` | Under `STAF.Playwright.Tests/` |
+
+---
+
+## IDE-Specific Tips
+
+### Visual Studio (GitHub Copilot)
+
+- **This file** (`.github/copilot-instructions.md`) is auto-loaded by VS GitHub Copilot
+- **Custom agents** (VS 2026 18.4+): `.github/agents/staf-ui-automation.agent.md`, `staf-api-automation.agent.md`, `staf-contract-automation.agent.md`, `staf-qa-orchestrator.agent.md` — pick from the agent picker or `@staf-ui-automation` etc.
+- Attach `AI/skills/ui-testing.md` or `api-testing.md` for deep codegen
+- MCP: `.mcp.json` → `MCPAgent/PlaywrightCSharpMcp.exe`
+
+### VS Code (GitHub Copilot)
+
+- Check [.vscode/README.md](../.vscode/README.md) for Copilot setup
+- Use [.vscode/staf-ai/INDEX.md](../.vscode/staf-ai/INDEX.md) to attach `AI/` files
+- Copilot Chat (`Ctrl+Shift+I`) for code generation
+
+### Cursor (AI Editor)
+
+- Cursor reads `.cursor/skills/MASTER.md` and `.cursor/cursor.rules`
+- Always-on: `.cursor/rules/staf-playwright-framework.mdc`
+- Skills under `.cursor/skills/` point at canonical `AI/` files
+
+---
+
+## Checklists
+
+### Before Creating New Code
+
+- [ ] Identify workflow: UI test, page object, API test, contract, or Excel
+- [ ] Check existing `Pages/` and `Tests/` for reuse
+- [ ] Reference golden file(s) from this document
+- [ ] Use `ConfigManager.GetParameter(...)` — no hardcoded URLs
+- [ ] Plan `ReportResult` / `ReportResultAPI` for important steps
+
+### After Creating New Code
+
+- [ ] Inherits correct base class (`BaseTest`, `BasePage`, `TestBaseAPI`, `OpenApiContractTestBase`)
+- [ ] Test passes locally with `testsetting.runsettings`
+- [ ] No build errors: `dotnet build STAF.Playwright.Tests/STAF.Playwright.Tests.csproj`
+
+---
+
+**Last Updated:** 2026-06-03  
+**Framework:** [STAF.Playwright](https://www.nuget.org/packages/STAF.Playwright)  
+**Target Framework:** .NET 10  
+**Applies To:** Visual Studio, VS Code, Cursor

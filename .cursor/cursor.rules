@@ -1,0 +1,150 @@
+# Cursor Rules — STAF.Playwright.Tests
+
+Global rules for consistent STAF Playwright code generation across the project.
+
+---
+
+## Framework Rules
+
+### Base Classes & Inheritance
+
+- **UI Tests** must inherit `BaseTest` from `STAF.Playwright.Framework`
+- **API Tests** must inherit `TestBaseAPI`
+- **Contract Tests** must inherit `OpenApiContractTestBase` and override `OpenApiSpecFolder`
+- **Page Objects** must inherit `BasePage`
+
+### Playwright & Initialization
+
+- ❌ **NEVER** create `IPlaywright` / `IBrowser` / custom page lifecycle in tests
+- ✅ Use inherited `Page` from `BaseTest` and `ConfigManager` for configuration
+- ❌ **NEVER** use `Thread.Sleep(...)` or blind `Task.Delay`
+- ✅ Use `WaitForElementVisibleAsync`, `EnterTextAsync`, `PressAsync` from `BasePage`
+
+### Locator Strategy
+
+All UI element locators must:
+
+1. Live on **page classes** under `STAF.Playwright.Tests/Pages/`
+2. Be exposed as **`ILocator`** properties via `Page.Locator(...)`
+3. Prefer stable selectors: `data-testid`, `id`, semantic attributes
+4. Be used only inside page methods — **not** in test classes
+
+**Example:**
+
+```csharp
+public ILocator SubmitButton => Page.Locator("[data-testid='submit']");
+
+public async Task ClickSubmitAsync()
+{
+    await EnterTextAsync(SubmitButton, "value", TestContext.TestName!, "Submit");
+}
+```
+
+### Test Structure (AAA Pattern)
+
+```csharp
+[TestMethod]
+public async Task GoogleSearch_Playwright_Succeeds()
+{
+    await Page.GotoAsync(ConfigManager.GetParameter("BaseUrl") ?? "https://www.google.com");
+    var page = new GooglePage(Page, TestContext);
+    await page.VerifyGooglePageIsDisplayed();
+    await page.SearchFor("Playwright");
+}
+```
+
+- ❌ Tests must NOT contain `Page.Locator`, `ClickAsync`, `FillAsync`
+- ✅ Tests must call page methods only
+
+### Reporting
+
+Every important step must use:
+
+- **UI:** `ReportResult.ReportResultPass/Fail(...)` with `Page`, `TestContext`
+- **API:** `ReportResultAPI.ReportResultPass/Fail(...)` with `TestContext`
+
+Pair reporting with MSTest `Assert.*` where appropriate.
+
+---
+
+## File Naming & Organization
+
+| File | Class | Inherits | Folder |
+|------|-------|----------|--------|
+| `GooglePage.cs` | `GooglePage` | `BasePage` | `Pages/` |
+| `Test1.cs` | `Test1` | `BaseTest` | `Tests/` |
+| `ApiTests.cs` | `ApiTests` | `TestBaseAPI` | `Tests/` |
+| `ContractTests.cs` | `ContractTests` | `OpenApiContractTestBase` | `Tests/` |
+
+```
+STAF.Playwright.Tests/
+├── Pages/           → *Page.cs (BasePage)
+├── Tests/           → UI, API, contract tests
+├── Tests/Excel/     → ExcelDriver samples
+└── OpenAPI/         → Contract specs
+```
+
+---
+
+## Naming Conventions
+
+### Methods
+
+- **Test methods:** `{Action}_{Scenario}_{Expected}` — e.g. `Api_GetPost_ReturnsOkAndBody`
+- **Page verification:** `Verify{Thing}Async` — e.g. `VerifyGooglePageIsDisplayed`
+- **Page actions:** `{Verb}{Noun}Async` — e.g. `SearchFor`, `LoginAs`
+
+### Configuration
+
+- Read URLs and flags via `ConfigManager.GetParameter("BaseUrl")`, `"ApiBaseUrl"`, `"Browser"`, etc.
+- Override with `STAF_*` environment variables when needed
+
+---
+
+## AI Handbook (Single Source of Truth)
+
+| File | Purpose |
+|------|---------|
+| `AI/instructions/system-prompt.md` | Persona and guardrails |
+| `AI/instructions/generation-rules.md` | Codegen output format |
+| `AI/instructions/debugging-rules.md` | Failure analysis |
+| `AI/skills/*.md` | Per-layer deep rules |
+| `.cursor/skills/MASTER.md` | Skill index (stubs → `AI/`) |
+| `.github/copilot-instructions.md` | Copilot quick rules |
+| `AGENTS.md` | Cross-tool agent entry |
+
+Cursor project skills under `.cursor/skills/*/SKILL.md` are **stubs only** — canonical text lives in `AI/`.
+
+---
+
+## Testing Rules
+
+```powershell
+dotnet build STAF.Playwright.Tests/STAF.Playwright.Tests.csproj
+dotnet test --settings STAF.Playwright.Tests/testsetting.runsettings
+dotnet test --filter "FullyQualifiedName~STAF.Playwright.Test1.TestMethod1" `
+    --settings STAF.Playwright.Tests/testsetting.runsettings
+```
+
+---
+
+## Code Generation (Cursor AI)
+
+**Reference specific files:**
+
+> "Use the pattern from @STAF.Playwright.Tests/Pages/GooglePage.cs"
+> "Follow @STAF.Playwright.Tests/Tests/ApiTests.cs for API reporting"
+
+**Specify constraints:**
+
+> "Don't use Thread.Sleep; use WaitForElementVisibleAsync"
+> "No Page.Locator in the test class"
+
+**Reference skills:**
+
+> "Follow staf-ui-testing / AI/skills/ui-testing.md"
+
+---
+
+**Last Updated:** 2026-06-03  
+**Applies To:** Cursor AI Editor

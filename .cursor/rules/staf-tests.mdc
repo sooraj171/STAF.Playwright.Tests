@@ -1,0 +1,13 @@
+---
+description: STAF Playwright tests — BaseTest, TestBaseAPI, thin test methods
+globs: STAF.Playwright.Tests/Tests/**/*.cs
+alwaysApply: false
+---
+
+# Tests
+
+- UI: inherit `BaseTest`; use `Page` from base; call page methods only — **no** raw `Page.Locator` / `ClickAsync` in tests
+- API: inherit `TestBaseAPI`; use `ApiClient` + `ReportResultAPI`
+- Contract: inherit `OpenApiContractTestBase`; use `RunAllContractTestsAsync` / `AssertAllContractTestsPassed`
+- Config: `ConfigManager.GetParameter(...)` — no hardcoded URLs
+- Golden UI: `STAF.Playwright.Tests/Tests/Test1.cs` | API: `ApiTests.cs` | Contract: `ContractTests.cs`

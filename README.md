@@ -77,9 +77,9 @@ Open the **repository root** (the folder that contains `STAF.Playwright.Tests.sl
 
 | Editor | What to do |
 |--------|------------|
-| **Cursor** | In **Chat** or **Composer**, type **`@`** and add **`AI/instructions/system-prompt.md`**, **`AI/instructions/generation-rules.md`**, plus the skill(s) you need (e.g. **`@AI/skills/ui-testing.md`**). For PBIs/User Stories end-to-end, add **`@.cursor/skills/staf-qa-orchestrator/SKILL.md`** or **`AI/instructions/qa-orchestrator-lifecycle.md`**. Optional: enable **project Skills** under `.cursor/skills/` — they only *point* at the same `AI/` files (no duplicate rules). |
-| **VS Code** | In **Copilot Chat**, use **Add context** / attach files. Start from **[`.vscode/staf-ai/INDEX.md`](.vscode/staf-ai/INDEX.md)** to see the full list, then attach the same `AI/instructions/*.md` and `AI/skills/*.md` files. Repo-wide behavior is also in **[`.github/copilot-instructions.md`](.github/copilot-instructions.md)**. |
-| **Visual Studio** | Use Copilot **Agent** mode with the Playwright MCP tools if enabled; attach or paste paths to the `AI/` files when the chat supports context. |
+| **Cursor** | Always-on: **`.cursor/rules/staf-playwright-framework.mdc`**. Skills: **[`.cursor/skills/MASTER.md`](.cursor/skills/MASTER.md)** (stubs → `AI/`). Attach **`@AI/instructions/system-prompt.md`**, **`generation-rules.md`**, and skill files as needed. Entry: **[`AGENTS.md`](AGENTS.md)**. |
+| **VS Code** | Repo instructions: **[`.github/copilot-instructions.md`](.github/copilot-instructions.md)**. Attach handbook files from **[`.vscode/staf-ai/INDEX.md`](.vscode/staf-ai/INDEX.md)**. Setup: **[`.vscode/README.md`](.vscode/README.md)**. |
+| **Visual Studio** | **[`.github/copilot-instructions.md`](.github/copilot-instructions.md)** + **custom agents** in **[`.github/agents/`](.github/agents/)** (`@staf-ui-automation`, `@staf-api-automation`, `@staf-contract-automation`, `@staf-qa-orchestrator`). MCP: **`.mcp.json`**. |
 
 **Suggested bundles**
 
@@ -238,11 +238,15 @@ A ready-made prompt is in [AI-assisted automation](#ai-assisted-automation-copy-
 | `STAF.Playwright.Tests/OpenAPI/placeholder.json` | OpenAPI spec for contract tests (JSONPlaceholder) |
 | `STAF.Playwright.Tests/testsetting.runsettings` | BaseUrl, ApiBaseUrl, Browser, Headless, Environment, etc. |
 | `STAF.Playwright.Tests/testdata.json` | Optional test data by environment (QA, UAT, …) |
-| `AI/instructions/` | Canonical AI playbook: persona, generation rules, debugging rules, **qa-orchestrator-lifecycle**, **work-item-report-templates** |
+| `AGENTS.md` | Cross-tool AI entry (Cursor, Copilot, VS agents, golden files, token discipline) |
+| `AI/instructions/` | Canonical AI playbook: persona, generation rules, debugging, **qa-orchestrator-lifecycle**, **ai-setup**, **QUICK_START** |
 | `AI/skills/` | Canonical per-topic skills (UI, API, DB, test data, reporting, framework, **qa-orchestrator**) |
 | `QA/` | Orchestrator outputs: **`work-items/{Provider}-{Id}/`** phase `.md` reports (see `QA/README.md`) |
-| `.cursor/skills/` | Cursor **project skills** (stubs only — each points at a file under `AI/`) |
-| `.vscode/staf-ai/INDEX.md` | Table of contents for the same `AI/` files (VS Code / Copilot attach list) |
+| `.github/agents/` | Visual Studio Copilot **custom agents** (UI, API, contract, QA orchestrator) |
+| `.cursor/skills/` | Cursor **project skills** (stubs → `AI/`) + **[MASTER.md](.cursor/skills/MASTER.md)** index |
+| `.cursor/cursor.rules` | Cursor global consistency rules (aligned with Copilot instructions) |
+| `.vscode/README.md` | VS Code Copilot + MCP setup |
+| `.vscode/staf-ai/INDEX.md` | Table of contents for `AI/` files (VS Code attach list) |
 | `MCPAgent/` | Playwright C# MCP server (included for use with Cursor, VS Code, or Visual Studio — see [Using the MCP agent](#using-the-mcp-agent)) |
 | `.cursor/mcp.json` | Cursor MCP config |
 | `.cursor/rules/staf-playwright-framework.mdc` | Cursor rules for STAF Playwright (base classes, page objects, tool usage) |
@@ -286,11 +290,11 @@ This repo is configured for the **Playwright C# MCP server**, so you can use AI-
 
 So that generated code follows STAF.Playwright patterns (base classes, page objects, reporting), the repo includes:
 
-- **Cursor:** [.cursor/rules/staf-playwright-framework.mdc](.cursor/rules/staf-playwright-framework.mdc) — applied automatically for this workspace.
-- **VS Code / GitHub Copilot:** [.github/copilot-instructions.md](.github/copilot-instructions.md) — loaded for the repository; attach **`AI/`** files in chat for the strongest alignment (see [AI-assisted automation](#ai-assisted-automation-copy-paste-prompts)).
-- **Canonical handbook:** [`AI/instructions/`](AI/instructions/) and [`AI/skills/`](AI/skills/) — **only** place the full rule text is maintained.
-- **Cursor project skills:** [`.cursor/skills/`](.cursor/skills/) — stubs that point at `AI/` (no duplicated rules).
-- **VS Code index:** [`.vscode/staf-ai/INDEX.md`](.vscode/staf-ai/INDEX.md) — quick list of `AI/` paths to attach.
+- **All tools:** [AGENTS.md](AGENTS.md) — non-negotiables, golden files, agent picker summary.
+- **Cursor:** [.cursor/rules/staf-playwright-framework.mdc](.cursor/rules/staf-playwright-framework.mdc) (always-on), [.cursor/cursor.rules](.cursor/cursor.rules), [.cursor/skills/MASTER.md](.cursor/skills/MASTER.md).
+- **VS Code / GitHub Copilot:** [.github/copilot-instructions.md](.github/copilot-instructions.md), [.vscode/README.md](.vscode/README.md), [.vscode/staf-ai/INDEX.md](.vscode/staf-ai/INDEX.md).
+- **Visual Studio Copilot:** same copilot instructions + [.github/agents/](.github/agents/) custom agents.
+- **Canonical handbook:** [`AI/instructions/`](AI/instructions/) and [`AI/skills/`](AI/skills/) — **only** place the full rule text is maintained; Cursor skills are stubs pointing here.
 
 **Copy-paste prompts and @-attach bundles:** [AI-assisted automation](#ai-assisted-automation-copy-paste-prompts) (above).
 

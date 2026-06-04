@@ -1,0 +1,15 @@
+---
+description: STAF Playwright page objects — BasePage, ILocator, framework helpers
+globs: STAF.Playwright.Tests/Pages/**/*.cs
+alwaysApply: false
+---
+
+# Page objects
+
+- Class: `{Screen}Page` : `BasePage`
+- Ctor: `public FooPage(IPage page, TestContext testContext) : base(page, testContext)`
+- Locators: `ILocator` properties via `Page.Locator(...)` — prefer data-testid, id, stable attributes
+- Interactions: `WaitForElementVisibleAsync`, `EnterTextAsync`, `PressAsync`, `ReportResult`
+- **No** custom Playwright/browser setup; **no** `Thread.Sleep`
+- Golden: `STAF.Playwright.Tests/Pages/GooglePage.cs`
+- Canonical skill: `AI/skills/ui-testing.md`
