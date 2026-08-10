@@ -1,16 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
   <RunConfiguration>
-    <TargetFrameworkVersion>.NETCoreApp,Version=v8.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>.NETCoreApp,Version=v10.0</TargetFrameworkVersion>
   </RunConfiguration>
   <TestRunParameters>
     <Parameter name="BaseUrl" value="https://www.google.com" />
     <Parameter name="ApiBaseUrl" value="https://jsonplaceholder.typicode.com" />
     <Parameter name="ApiTimeout" value="30" />
     <Parameter name="Browser" value="Chrome" />
-    <Parameter name="Headless" value="false" />
+    <Parameter name="Headless" value="true" />
     <Parameter name="Username" value="testuser" />
     <Parameter name="Password" value="password123" />
     <Parameter name="Environment" value="QA" />
+    <!-- STAF 3.0 browser-state / login (disabled for sample smoke runs) -->
+    <Parameter name="BrowserStateEnabled" value="false" />
+    <Parameter name="MFAEnabled" value="false" />
+    <Parameter name="BrowserStateResetFlag" value="false" />
+    <Parameter name="IncognitoMode" value="false" />
+    <Parameter name="SmartSessionRefresh" value="true" />
+    <Parameter name="ForceLoginRefresh" value="false" />
+    <Parameter name="LoginUrl" value="" />
+    <Parameter name="LoginUsernameSelector" value="#username" />
+    <Parameter name="LoginPasswordSelector" value="#password" />
+    <Parameter name="LoginSubmitSelector" value="button[type=submit]" />
+    <Parameter name="LoginVerificationUrl" value="" />
+    <Parameter name="LoginVerificationSelector" value="" />
+    <Parameter name="MFAManualWaitTimeoutMs" value="300000" />
+    <Parameter name="SqlConnectionString" value="" />
   </TestRunParameters>
 </RunSettings>

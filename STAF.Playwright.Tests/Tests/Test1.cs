@@ -13,10 +13,9 @@ namespace STAF.Playwright
             // BaseTest navigates to BaseUrl from testsetting.runsettings in TestInitialize; optional override:
             await Page.GotoAsync(ConfigManager.GetParameter("BaseUrl") ?? "https://www.google.com");
 
-            GooglePage googlePage = new (Page, TestContext);
+            GooglePage googlePage = new(Page, StafContext);
             await googlePage.VerifyGooglePageIsDisplayed();
             await googlePage.SearchFor("Playwright");
         }
     }
-    
 }
