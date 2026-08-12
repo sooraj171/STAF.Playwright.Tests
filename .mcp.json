@@ -24,8 +24,8 @@
       "args": ["${input:ado_org}", "-a", "envvar", "-d", "all"],
       "env": {
         "ADO_MCP_AUTH_TOKEN": "${input:ado_pat}",
-        "ado_mcp_project": "NUnitTestProject",
-        "ado_mcp_team": "NUnitTestProject Team"
+        "ado_mcp_project": "YourProject",
+        "ado_mcp_team": "YourProject Team"
       }
     }
   }

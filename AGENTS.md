@@ -64,7 +64,7 @@ Pick an agent from the Copilot agent picker (VS 2026 18.4+) or type `@staf-ui-au
 
 Documentation: [README.md](README.md) · Quick start: [AI/instructions/QUICK_START.md](AI/instructions/QUICK_START.md)
 
-MCP server: `MCPAgent/PlaywrightCSharpMcp.exe` — see [README.md — Using the MCP agent](README.md#using-the-mcp-agent).
+MCP servers: `MCPAgent/PlaywrightCSharpMcp.exe` and `MCPAgent/AzureDevOps/` — see [README.md — Using MCP servers](README.md#using-mcp-servers).
 
 ## Prompt shortcuts
 

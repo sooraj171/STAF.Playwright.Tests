@@ -140,7 +140,7 @@ dotnet build STAF.Playwright.Tests/STAF.Playwright.Tests.csproj
 
 - `.github/copilot-instructions.md` for Copilot
 - Custom agents: `.github/agents/staf-*.agent.md`
-- MCP: `.mcp.json` → `MCPAgent/PlaywrightCSharpMcp.exe`
+- MCP: `.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json` → Playwright C# + Azure DevOps under `MCPAgent/` ([README — Using MCP servers](../../README.md#using-mcp-servers))
 
 ### VS Code
 
