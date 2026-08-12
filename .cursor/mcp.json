@@ -7,8 +7,9 @@
     },
     "azure-devops": {
       "command": "C:\\repo\\cursor\\STAF.Playwright.Tests\\MCPAgent\\AzureDevOps\\AzureDevOps.Mcp.Server.exe",
-      "args": ["soorajram", "-a", "interactive", "-d", "all"],
+      "args": ["soorajram", "-a", "envvar", "-d", "all"],
       "env": {
+        "ADO_MCP_AUTH_TOKEN": "PASTE_YOUR_PAT_HERE",
         "ado_mcp_project": "NUnitTestProject",
         "ado_mcp_team": "NUnitTestProject Team"
       }

@@ -1,25 +1,32 @@
-{
-  "inputs": [
-    {
-      "id": "ado_org",
-      "type": "promptString",
-      "description": "Azure DevOps organization name (e.g. 'contoso')"
-    }
-  ],
-  "servers": {
-    "playwrightCsharp": {
-      "type": "stdio",
-      "command": "MCPAgent/PlaywrightCSharpMcp.exe",
-      "args": []
-    },
-    "azure-devops": {
-      "type": "stdio",
-      "command": "MCPAgent/AzureDevOps/AzureDevOps.Mcp.Server.exe",
-      "args": ["${input:ado_org}", "-a", "interactive", "-d", "all"],
-      "env": {
-        "ado_mcp_project": "NUnitTestProject",
-        "ado_mcp_team": "NUnitTestProject Team"
-      }
-    }
-  }
-}
+{
+  "inputs": [
+    {
+      "id": "ado_org",
+      "type": "promptString",
+      "description": "Azure DevOps organization name (e.g. 'contoso')"
+    },
+    {
+      "id": "ado_pat",
+      "type": "promptString",
+      "description": "Azure DevOps Personal Access Token (PAT)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "playwrightCsharp": {
+      "type": "stdio",
+      "command": "MCPAgent/PlaywrightCSharpMcp.exe",
+      "args": []
+    },
+    "azure-devops": {
+      "type": "stdio",
+      "command": "MCPAgent/AzureDevOps/AzureDevOps.Mcp.Server.exe",
+      "args": ["${input:ado_org}", "-a", "envvar", "-d", "all"],
+      "env": {
+        "ADO_MCP_AUTH_TOKEN": "${input:ado_pat}",
+        "ado_mcp_project": "NUnitTestProject",
+        "ado_mcp_team": "NUnitTestProject Team"
+      }
+    }
+  }
+}
