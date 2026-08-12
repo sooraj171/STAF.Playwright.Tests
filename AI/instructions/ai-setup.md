@@ -49,11 +49,12 @@ Pick from Copilot agent picker (VS 2026 18.4+) or `@staf-ui-automation`, `@staf-
 | Contract | [.github/agents/staf-contract-automation.agent.md](../../.github/agents/staf-contract-automation.agent.md) |
 | QA orchestrator | [.github/agents/staf-qa-orchestrator.agent.md](../../.github/agents/staf-qa-orchestrator.agent.md) |
 
-## MCP (browser + codegen)
+## MCP (browser + Azure DevOps)
 
 1. Restart editor after clone.
-2. Confirm **playwright-csharp** in MCP panel (`.cursor/mcp.json`, `.vscode/mcp.json`, or `.mcp.json` for VS).
-3. Combine MCP with instructions: *"Use playwright tools to inspect the page, then generate a BaseTest test using GooglePage pattern."*
+2. Confirm **playwright-csharp** / **playwrightCsharp** in the MCP panel (`.cursor/mcp.json`, `.vscode/mcp.json`, or `.mcp.json` for VS).
+3. For work-item fetch, configure **azure-devops** with org, project, team, and PAT (`ADO_MCP_AUTH_TOKEN`). See [README.md — Using MCP servers](../../README.md#using-mcp-servers).
+4. Combine MCP with instructions: *"Use playwright tools to inspect the page, then generate a BaseTest test using GooglePage pattern."*
 
 ## VS Code Copilot tips
 

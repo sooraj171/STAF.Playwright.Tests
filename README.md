@@ -27,6 +27,7 @@ STAF (Simple Test Automation Framework) provides base classes, page object suppo
 - **Configuration** – `testsetting.runsettings` and optional `testdata.json` with environment support
 - **AI agents & skills** – Cursor project skills, GitHub Copilot instructions, and Visual Studio **custom agents** (STAF UI Automation, STAF API Automation, STAF Contract Automation, STAF QA Orchestrator). See [AI agents and skills](#ai-agents-and-skills).
 - **AI QA Orchestrator (work items)** – STLC-aligned playbook and phase markdown reports under `QA/work-items/` (Azure DevOps / Jira via MCP when configured, or pasted requirements). See [Work-item / PBI QA (orchestrator)](#work-item--pbi-qa-orchestrator).
+- **MCP servers** – Bundled Playwright C# and Azure DevOps MCP under `MCPAgent/` for AI-assisted authoring and live work-item fetch. See [Using MCP servers](#using-mcp-servers).
 
 ---
 
@@ -88,7 +89,7 @@ Open the **repository root** (the folder that contains `STAF.Playwright.Tests.sl
 - **API automation:** VS → `@staf-api-automation` · Cursor → `staf-api-testing` · same instructions + `AI/skills/api-testing.md`
 - **Contract tests:** VS → `@staf-contract-automation` · Attach: `AI/skills/framework-rules.md` + golden `Tests/ContractTests.cs`
 - **After a failure:** `AI/instructions/debugging-rules.md` + the skill for the layer that failed (e.g. `AI/skills/ui-testing.md`)
-- **Work item / PBI (STLC reports):** VS → `@staf-qa-orchestrator` · Cursor → `staf-qa-orchestrator` · Attach: `AI/instructions/qa-orchestrator-lifecycle.md`, `AI/instructions/work-item-report-templates.md`, `AI/skills/qa-orchestrator.md`. Optionally configure **Azure DevOps** or **Jira** MCP; if not available, paste the description and acceptance criteria.
+- **Work item / PBI (STLC reports):** VS → `@staf-qa-orchestrator` · Cursor → `staf-qa-orchestrator` · Attach: `AI/instructions/qa-orchestrator-lifecycle.md`, `AI/instructions/work-item-report-templates.md`, `AI/skills/qa-orchestrator.md`. Configure **Azure DevOps** MCP ([setup](#using-mcp-servers)); if unavailable, paste the description and acceptance criteria.
 
 See [AI agents and skills](#ai-agents-and-skills) for the full agent and skill reference.
 
@@ -278,7 +279,7 @@ Playbook and templates:
 
 **Outputs:** phase reports under **`QA/work-items/{Provider}-{WorkItemId}/`** (`01-pbi-fetch.md` … `07-summary-report.md`). See [`QA/README.md`](QA/README.md). These are separate from framework **HTML** test reports under `TestResults`.
 
-**MCP:** This repo ships the **Playwright C#** MCP under `MCPAgent/` for test authoring. **ADO** or **Jira** work-item fetch is optional — add those MCP servers in your editor if you want live work-item retrieval; otherwise paste the item into chat (documented as a gap in `01-pbi-fetch.md`).
+**MCP:** This repo ships **Playwright C#** and **Azure DevOps** MCP servers under `MCPAgent/`. Configure ADO with a PAT to fetch work items live; otherwise paste the item into chat (documented as a gap in `01-pbi-fetch.md`). See [Using MCP servers](#using-mcp-servers).
 
 A ready-made prompt is in [AI-assisted automation](#ai-assisted-automation-copy-paste-prompts) under **Work item / PBI — full QA cycle**.
 
@@ -308,11 +309,12 @@ A ready-made prompt is in [AI-assisted automation](#ai-assisted-automation-copy-
 | `.cursor/cursor.rules` | Cursor global consistency rules (aligned with Copilot instructions) |
 | `.vscode/README.md` | VS Code Copilot + MCP setup |
 | `.vscode/staf-ai/INDEX.md` | Table of contents for `AI/` files (VS Code attach list) |
-| `MCPAgent/` | Playwright C# MCP server (included for use with Cursor, VS Code, or Visual Studio — see [Using the MCP agent](#using-the-mcp-agent)) |
-| `.cursor/mcp.json` | Cursor MCP config |
+| `MCPAgent/` | Bundled MCP servers — Playwright C# + Azure DevOps (see [Using MCP servers](#using-mcp-servers)) |
+| `MCPAgent/AzureDevOps/` | Azure DevOps MCP executable + `mcp-config.example.json` |
+| `.cursor/mcp.json` | Cursor MCP config (Playwright + Azure DevOps) |
 | `.cursor/rules/staf-playwright-framework.mdc` | Cursor rules for STAF Playwright (base classes, page objects, tool usage) |
 | `.github/copilot-instructions.md` | GitHub Copilot / agent instructions; references `AI/` as single source of truth |
-| `.vscode/mcp.json` | VS Code MCP config |
+| `.vscode/mcp.json` | VS Code MCP config (Playwright + Azure DevOps) |
 | `.mcp.json` | Visual Studio MCP config (solution root) |
 
 ---
@@ -327,39 +329,123 @@ For full options and CI/CD usage, see the [STAF.Playwright NuGet page](https://w
 
 ---
 
-## Using the MCP agent
+## Using MCP servers
 
-This repo is configured for the **Playwright C# MCP server**, so you can use AI-assisted development in **Cursor**, **VS Code**, or **Visual Studio** to generate and refine STAF.Playwright tests and page objects. The MCP server is included under **`MCPAgent/`**—clone the repo and open it in your editor; no extra setup is required.
+This repository includes MCP servers under **`MCPAgent/`** so AI assistants in **Cursor**, **VS Code**, or **Visual Studio** can help you author STAF.Playwright tests and (optionally) fetch Azure DevOps work items for the QA Orchestrator.
 
-### What you need
+| Server | Path | Purpose | Setup |
+|--------|------|---------|--------|
+| **Playwright C#** | `MCPAgent/PlaywrightCSharpMcp.exe` | Browser inspection and AI-assisted UI/API test authoring | Ready after clone — enable in your editor |
+| **Azure DevOps** | `MCPAgent/AzureDevOps/AzureDevOps.Mcp.Server.exe` | Fetch PBIs, user stories, and related work-item data | Requires org / project / team + PAT (below) |
 
-- **.NET 10 SDK** and one of: **Cursor**, **VS Code** (with [GitHub Copilot](https://code.visualstudio.com/docs/copilot/setup)), or **Visual Studio 2022** (17.14+ with [GitHub Copilot](https://learn.microsoft.com/en-us/visualstudio/ide/visual-studio-github-copilot-chat)).
-- Open this repository as the workspace (Cursor/VS Code: **File → Open Folder** → repo root; Visual Studio: **File → Open → Project/Solution** → `STAF.Playwright.Tests.sln`).
+Config files (edit these for your environment):
 
-### How to use the MCP agent
+| Editor | File |
+|--------|------|
+| **Cursor** | [`.cursor/mcp.json`](.cursor/mcp.json) |
+| **VS Code** | [`.vscode/mcp.json`](.vscode/mcp.json) |
+| **Visual Studio** | [`.mcp.json`](.mcp.json) |
 
-- **Cursor**  
-  Open the repo as the workspace, then go to **Cursor Settings → Features → MCP** and ensure the project MCP is enabled. The Playwright C# tools appear in the AI/composer; use them to generate or refine tests and page objects.
+Reference template: [`MCPAgent/AzureDevOps/mcp-config.example.json`](MCPAgent/AzureDevOps/mcp-config.example.json).
 
-- **VS Code**  
-  Open the repo as the workspace and ensure [GitHub Copilot](https://code.visualstudio.com/docs/copilot/setup) is set up. First time you use the MCP server, trust it when prompted. In Chat, enable the **playwrightCsharp** tools and use Copilot (e.g. Agent mode) to generate or refine STAF.Playwright tests and page objects.
+### Prerequisites
 
-- **Visual Studio**  
-  Open `STAF.Playwright.Tests.sln`. Visual Studio picks up `.mcp.json` at the solution root. In the **GitHub Copilot** chat, switch to **Agent** mode, enable the **playwrightCsharp** tools, then ask Copilot to generate or refine tests or page objects (approve tool use when prompted). If the server does not start, set the `"command"` in `.mcp.json` to the full path to `MCPAgent/PlaywrightCSharpMcp.exe`. See [Use MCP servers in Visual Studio](https://learn.microsoft.com/en-us/visualstudio/ide/mcp-servers).
+- **.NET 10 SDK**
+- One of: **Cursor**, **VS Code** (with [GitHub Copilot](https://code.visualstudio.com/docs/copilot/setup)), or **Visual Studio 2022** (17.14+) / **Visual Studio 2026** with [GitHub Copilot](https://learn.microsoft.com/en-us/visualstudio/ide/visual-studio-github-copilot-chat)
+- Open the **repository root** as the workspace (Cursor/VS Code: **File → Open Folder**; Visual Studio: open `STAF.Playwright.Tests.sln`)
+
+### Playwright C# MCP (test authoring)
+
+No credentials required. After opening the repo:
+
+1. **Cursor** — **Cursor Settings → Features → MCP** (or MCP panel) and ensure **playwright-csharp** is enabled.
+2. **VS Code** — Trust the MCP server when prompted. In Copilot Chat (Agent mode), enable **playwrightCsharp** tools.
+3. **Visual Studio** — Copilot Chat → **Agent** mode → enable **playwrightCsharp**. If the server does not start, set `"command"` in `.mcp.json` to the full path of `MCPAgent/PlaywrightCSharpMcp.exe`. See [Use MCP servers in Visual Studio](https://learn.microsoft.com/en-us/visualstudio/ide/mcp-servers).
+
+Ask the assistant to inspect a page or generate/refine tests and page objects that follow STAF patterns (`BaseTest`, `BasePage`, `ReportResult`).
+
+### Azure DevOps MCP (work items / QA orchestrator)
+
+Use this when you want the QA Orchestrator (or chat) to **pull live work items** from Azure DevOps instead of pasting requirements.
+
+#### Step 1 — Create a Personal Access Token (PAT)
+
+1. Sign in to Azure DevOps and open **User settings → Personal access tokens → New Token**.
+2. Choose the **organization** you will query (or all accessible organizations if required).
+3. Set an expiration you are comfortable with.
+4. Grant at least these scopes:
+   - **Work Items — Read** (required to fetch PBIs / stories)
+   - **Project and Team — Read** (recommended for project/team context)
+   - **Code — Read** (optional; useful if linked PRs/repos are needed)
+5. Create the token and **copy it immediately** — Azure DevOps shows it only once.
+
+Official guide: [Use personal access tokens](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate).
+
+**Security:** Never commit a real PAT to git. Prefer editor **input prompts** (VS Code / Visual Studio) or keep the token only in your local MCP env. Rotate the token if it was ever shared or committed by mistake.
+
+#### Step 2 — Set organization, project, team, and PAT
+
+The Azure DevOps server is started with:
+
+```text
+AzureDevOps.Mcp.Server.exe <organization> -a envvar -d all
+```
+
+| Setting | Where it goes | Example |
+|---------|----------------|---------|
+| **Organization** | First CLI argument (from `https://dev.azure.com/{organization}`) | `contoso` |
+| **Auth mode** | `-a envvar` | Reads the token from `ADO_MCP_AUTH_TOKEN` |
+| **Tool domains** | `-d all` | Enables the full ADO tool set |
+| **Project** | Env `ado_mcp_project` | Your ADO project name |
+| **Team** | Env `ado_mcp_team` | Often `{Project} Team` |
+| **PAT** | Env `ADO_MCP_AUTH_TOKEN` | Your Personal Access Token (raw value) |
+
+Update the values in your editor’s MCP file:
+
+**Visual Studio (`.mcp.json`) and VS Code (`.vscode/mcp.json`)** — recommended pattern:
+
+- Organization and PAT are prompted securely via `inputs` (`ado_org`, `ado_pat`).
+- Map them with `${input:ado_org}` and `ADO_MCP_AUTH_TOKEN`: `${input:ado_pat}`.
+- Set `ado_mcp_project` and `ado_mcp_team` to your project and team names.
+
+**Cursor (`.cursor/mcp.json`)**:
+
+1. Set `command` to `MCPAgent/AzureDevOps/AzureDevOps.Mcp.Server.exe` (use a full path only if a relative path fails on your machine).
+2. Set `args` to `["YOUR_ORG", "-a", "envvar", "-d", "all"]`.
+3. Set `env.ADO_MCP_AUTH_TOKEN` to your PAT (local machine only).
+4. Set `ado_mcp_project` and `ado_mcp_team`.
+5. Reload MCP (**Cursor Settings → MCP**) and confirm **azure-devops** is enabled.
+
+#### Step 3 — Auth alternatives (optional)
+
+| Mode | Flag | When to use |
+|------|------|-------------|
+| Environment variable (default in this repo) | `-a envvar` | PAT stored in `ADO_MCP_AUTH_TOKEN` |
+| Interactive browser sign-in | `-a interactive` | Local setup without storing a PAT |
+| Azure CLI | `-a azcli` | Machine already signed in with `az login` |
+
+#### Step 4 — Verify
+
+1. Restart the editor or reload MCP servers.
+2. Confirm **azure-devops** tools appear in the MCP / Copilot tool list.
+3. Try a prompt such as: *“Fetch Azure DevOps work item 12345 and summarize the acceptance criteria.”*
+4. Or run the **STAF QA Orchestrator** with an ADO ID or URL (`@staf-qa-orchestrator` / skill `staf-qa-orchestrator`).
+
+If ADO MCP is not configured, paste the work item into chat; the orchestrator records that limitation in `01-pbi-fetch.md`.
 
 ### AI instructions and rules
 
-So that generated code follows STAF.Playwright patterns (base classes, page objects, reporting), the repo includes:
+So generated code follows STAF.Playwright patterns (base classes, page objects, reporting), the repo includes:
 
 - **All tools:** [AGENTS.md](AGENTS.md) — non-negotiables, golden files, agent picker summary.
 - **Cursor:** [.cursor/rules/staf-playwright-framework.mdc](.cursor/rules/staf-playwright-framework.mdc) (always-on), [.cursor/cursor.rules](.cursor/cursor.rules), [.cursor/skills/MASTER.md](.cursor/skills/MASTER.md).
 - **VS Code / GitHub Copilot:** [.github/copilot-instructions.md](.github/copilot-instructions.md), [.vscode/README.md](.vscode/README.md), [.vscode/staf-ai/INDEX.md](.vscode/staf-ai/INDEX.md).
-- **Visual Studio Copilot:** same copilot instructions + [.github/agents/](.github/agents/) custom agents.
+- **Visual Studio Copilot:** same Copilot instructions + [.github/agents/](.github/agents/) custom agents.
 - **Canonical handbook:** [`AI/instructions/`](AI/instructions/) and [`AI/skills/`](AI/skills/) — **only** place the full rule text is maintained; Cursor skills are stubs pointing here.
 
 **Copy-paste prompts and @-attach bundles:** [AI-assisted automation](#ai-assisted-automation-copy-paste-prompts) (above).
 
-MCP tools (browser inspection, etc.) complement the handbook; they do not replace the `BaseTest` / `BasePage` / `ApiClient` patterns in this project.
+MCP tools complement the handbook; they do not replace the `BaseTest` / `BasePage` / `ApiClient` patterns in this project.
 
 ---
 

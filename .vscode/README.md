@@ -21,4 +21,11 @@ When using Visual Studio 2026+ Copilot, pick specialized agents from `.github/ag
 
 ## MCP
 
-Browser automation and Playwright codegen: [.vscode/mcp.json](mcp.json) → `MCPAgent/PlaywrightCSharpMcp.exe`. See [README.md — Using the MCP agent](../README.md#using-the-mcp-agent).
+Configured in [.vscode/mcp.json](mcp.json):
+
+| Server | Executable | Notes |
+|--------|------------|--------|
+| **playwrightCsharp** | `MCPAgent/PlaywrightCSharpMcp.exe` | Browser / codegen — no credentials |
+| **azure-devops** | `MCPAgent/AzureDevOps/AzureDevOps.Mcp.Server.exe` | Prompts for org + PAT; set `ado_mcp_project` / `ado_mcp_team` in `mcp.json` |
+
+Full setup (PAT scopes, auth modes, verification): [README.md — Using MCP servers](../README.md#using-mcp-servers).

@@ -22,16 +22,16 @@
       "type": "stdio",
       "command": "${workspaceFolder}/MCPAgent/AzureDevOps/AzureDevOps.Mcp.Server.exe",
       "args": [
-        "ado_org",
+        "${input:ado_org}",
         "-a",
         "envvar",
         "-d",
         "all"
       ],
       "env": {
-        "ADO_MCP_AUTH_TOKEN": "PATTOKENHERE",
-        "ado_mcp_project": "NUnitTestProject",
-        "ado_mcp_team": "NUnitTestProject Team"
+        "ADO_MCP_AUTH_TOKEN": "${input:ado_pat}",
+        "ado_mcp_project": "YourProject",
+        "ado_mcp_team": "YourProject Team"
       }
     }
   }
