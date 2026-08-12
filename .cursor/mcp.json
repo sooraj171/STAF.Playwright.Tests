@@ -1,9 +1,17 @@
 {
   "mcpServers": {
     "playwright-csharp": {
-      "command": "${workspaceFolder}/MCPAgent/PlaywrightCSharpMcp.exe",
+      "command": "C:\\repo\\cursor\\STAF.Playwright.Tests\\MCPAgent\\PlaywrightCSharpMcp.exe",
       "args": [],
       "env": {}
+    },
+    "azure-devops": {
+      "command": "C:\\repo\\cursor\\STAF.Playwright.Tests\\MCPAgent\\AzureDevOps\\AzureDevOps.Mcp.Server.exe",
+      "args": ["soorajram", "-a", "interactive", "-d", "all"],
+      "env": {
+        "ado_mcp_project": "NUnitTestProject",
+        "ado_mcp_team": "NUnitTestProject Team"
+      }
     }
   }
 }

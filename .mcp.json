@@ -1,9 +1,25 @@
-{
-  "servers": {
-    "playwrightCsharp": {
-      "type": "stdio",
-      "command": "MCPAgent/PlaywrightCSharpMcp.exe",
-      "args": []
-    }
-  }
-}
+{
+  "inputs": [
+    {
+      "id": "ado_org",
+      "type": "promptString",
+      "description": "Azure DevOps organization name (e.g. 'contoso')"
+    }
+  ],
+  "servers": {
+    "playwrightCsharp": {
+      "type": "stdio",
+      "command": "MCPAgent/PlaywrightCSharpMcp.exe",
+      "args": []
+    },
+    "azure-devops": {
+      "type": "stdio",
+      "command": "MCPAgent/AzureDevOps/AzureDevOps.Mcp.Server.exe",
+      "args": ["${input:ado_org}", "-a", "interactive", "-d", "all"],
+      "env": {
+        "ado_mcp_project": "NUnitTestProject",
+        "ado_mcp_team": "NUnitTestProject Team"
+      }
+    }
+  }
+}
